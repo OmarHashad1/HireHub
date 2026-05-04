@@ -47,3 +47,7 @@ tsconfig.tsbuildinfo
 #files
 uploads
 */uploads
+
+#Claude
+*/.claude
+.claude/*
