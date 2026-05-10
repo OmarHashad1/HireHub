@@ -1,0 +1,58 @@
+import pino from "pino";
+import { dbTransport } from "../DB/pinoTransport.js";
+import { resolve } from "node:path";
+
+const activityStreams: pino.StreamEntry[] = [
+  {
+    level: "info",
+    stream: dbTransport,
+  },
+];
+
+const serverStreams: pino.StreamEntry[] = [];
+
+if (process.env.NODE_ENV == "development") {
+  activityStreams.push(
+    {
+      level: "debug",
+      stream: pino.transport({
+        target: "pino-pretty",
+        options: { colorize: true, ignore: "pid,hostname" },
+      }),
+    },
+    {
+      level: "debug",
+      stream: pino.transport({
+        target: "pino/file",
+        options: { destination: resolve("./src/logs/app.log"), mkdir: true },
+      }),
+    },
+  );
+
+  serverStreams.push(
+    {
+      level: "debug",
+      stream: pino.transport({
+        target: "pino-pretty",
+        options: { colorize: true, ignore: "pid,hostname" },
+      }),
+    },
+    {
+      level: "debug",
+      stream: pino.transport({
+        target: "pino/file",
+        options: { destination: resolve("./src/logs/server.log"), mkdir: true },
+      }),
+    },
+  );
+}
+
+export const activityLogger = pino(
+  { level: process.env.NODE_ENV == "development" ? "debug" : "info" },
+  pino.multistream(activityStreams),
+);
+
+export const serverLogger = pino(
+  { level: process.env.NODE_ENV == "development" ? "debug" : "error" },
+  pino.multistream(serverStreams),
+);
