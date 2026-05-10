@@ -45,7 +45,6 @@ const reportSchema = new Schema<IReport>(
       type: String,
       enum: [...Object.values(REPORT_STATUS)],
       default: REPORT_STATUS.PENDING,
-      index: true,
     },
     resolvedBy: {
       type: Schema.Types.ObjectId,

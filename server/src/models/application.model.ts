@@ -40,11 +40,7 @@ const applicationSchema = new Schema<IApplication>(
     },
 
     aiRating: {
-      score: { type: Number, min: 0, max: 100 },
-      summary: { type: String },
-      atsScore: { type: Number, min: 0, max: 100, default: null },
-      atsFeedback: { type: String, default: null },
-      ratedAt: { type: Date },
+      type: String,
       default: null,
     },
     autoRejected: {

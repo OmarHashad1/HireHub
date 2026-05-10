@@ -1,13 +1,7 @@
 import { Document, Types } from "mongoose";
 import { APPLICATION_STATUS } from "../enums/application.enums.js";
 
-export interface IAiRating {
-  score: number;
-  summary: string;
-  atsScore?: number | null;
-  atsFeedback?: string | null;
-  ratedAt: Date;
-}
+
 
 export interface IApplication extends Document {
   job: Types.ObjectId;
@@ -17,7 +11,7 @@ export interface IApplication extends Document {
   status: APPLICATION_STATUS;
   rejectionReason?: string | null;
   recruiterNotes?: string | null;
-  aiRating?: IAiRating | null;
+  aiRating?: string | null;
   autoRejected: boolean;
   hadInterview: boolean;
   withdrawnAt?: Date | null;
