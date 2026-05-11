@@ -9,7 +9,12 @@ const activityStreams: pino.StreamEntry[] = [
   },
 ];
 
-const serverStreams: pino.StreamEntry[] = [];
+const serverStreams: pino.StreamEntry[] = [
+  {
+    level: "error",
+    stream: process.stdout,
+  },
+];
 
 if (process.env.NODE_ENV == "development") {
   activityStreams.push(

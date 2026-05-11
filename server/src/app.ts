@@ -13,9 +13,8 @@ export const app = async () => {
 
   //Middlewares
   APP.use(globalLimiter);
-  APP.use(helmet);
+  APP.use(helmet());
   APP.use(express.json());
-  APP.use(pino);
 
   //Services
   try {
