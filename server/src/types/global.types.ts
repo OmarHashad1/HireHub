@@ -13,8 +13,9 @@ export interface successResponseDTO<T> {
   data?: T;
 }
 
-export interface errorResponseDTO {
+export interface errorResponseDTO<T> {
   res: Response;
   message: string;
   status: number;
+  error?: T;
 }
