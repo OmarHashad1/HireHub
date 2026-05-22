@@ -60,10 +60,8 @@ const userSchema = new Schema<IUser>(
     },
     phoneNumber: {
       type: String,
-      required: function (this: IUser) {
-        return this.provider === PROVIDER.SYSTEM;
-      },
-      default: null,
+      unique: true,
+      required: true,
     },
     provider: {
       type: String,

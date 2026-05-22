@@ -1,9 +1,14 @@
 import argon2 from "argon2";
 import { ROLE } from "../../enums/user.enums.js";
 import { UserRepo } from "../../repositories/user.repo.js";
-import { ConflictException } from "../../utils/errorHandler.util.js";
-import { SignupDTO } from "../../schemas/auth.schema.js";
-
+import {
+  ConflictException,
+  InternalServerErrorException,
+  UnauthorizedException,
+} from "../../utils/errorHandler.util.js";
+import { loginDTO, SignupDTO } from "../../schemas/auth.schema.js";
+import { generateToken } from "../../utils/token.util.js";
+import { nanoid } from "nanoid";
 const userRepo = new UserRepo();
 
 export const signup = async (dto: SignupDTO) => {
@@ -27,5 +32,62 @@ export const signup = async (dto: SignupDTO) => {
     lastName: user.lastName,
     email: user.email,
     role: user.role,
+  };
+};
+
+export const login = async (dto: loginDTO) => {
+  const user = await userRepo.findOne({
+    filter: { email: dto.email },
+    projection: {
+      _id: 0,
+      role: 1,
+      password: 1,
+      email: 1,
+    },
+    options: { lean: true },
+  });
+  if (
+    !user ||
+    !user.password ||
+    !(await argon2.verify(user.password, dto.password))
+  )
+    throw new UnauthorizedException("Email or password is not correct");
+  if (!user.role) {
+    throw new InternalServerErrorException();
+  }
+
+  const jti = nanoid(25);
+
+  console.log(jti);
+  const accessToken = generateToken({
+    role: user.role,
+    payload: {
+      _id: user._id as unknown as string,
+      email: user.email,
+      role: user.role,
+    },
+    options: {
+      jwtid: jti,
+      expiresIn: "30M",
+    },
+  });
+
+  const refreshToken = generateToken({
+    role: user.role,
+    type: "refresh",
+    payload: {
+      _id: user._id as unknown as string,
+      email: user.email,
+      role: user.role,
+    },
+    options: {
+      jwtid: jti,
+      expiresIn: "1W",
+    },
+  });
+
+  return {
+    accessToken,
+    refreshToken,
   };
 };

@@ -30,7 +30,16 @@ export class NotFoundException extends AppError {
 }
 
 export class ConflictException extends AppError {
-  constructor(message: string = "Resource already exists", options?: ErrorOptions) {
+  constructor(
+    message: string = "Resource already exists",
+    options?: ErrorOptions,
+  ) {
     super(message, StatusCodes.CONFLICT, options);
+  }
+}
+
+export class UnauthorizedException extends AppError {
+  constructor(message: string = "Unauthorized", options?: ErrorOptions) {
+    super(message, StatusCodes.UNAUTHORIZED, options);
   }
 }

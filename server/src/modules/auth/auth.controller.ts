@@ -1,8 +1,9 @@
+import { loginDTO } from "./../../schemas/auth.schema.js";
 import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import { successRes } from "../../utils/response.util.js";
+import { errorRes, successRes } from "../../utils/response.util.js";
 import { SignupDTO } from "../../schemas/auth.schema.js";
-import { signup } from "./auth.service.js";
+import { login, signup } from "./auth.service.js";
 
 export const signupController = async (
   req: Request,
@@ -17,7 +18,32 @@ export const signupController = async (
       status: StatusCodes.CREATED,
       data: user,
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code == "11000") {
+      return errorRes({
+        res,
+        message: "Phone Number already exists",
+        status: StatusCodes.CONFLICT,
+      });
+    }
     next(error);
+  }
+};
+
+export const loginController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const data = await login(req.body as loginDTO);
+    successRes({
+      res,
+      message: "Logged in successfully",
+      status: StatusCodes.CREATED,
+      data,
+    });
+  } catch (err) {
+    throw err
   }
 };

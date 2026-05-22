@@ -16,7 +16,7 @@ export const signupSchema = z.strictObject({
       error: "Password must contain at least one special character",
     }),
   phoneNumber: z.string().min(7).max(20),
-  avatar: z.string().url().optional(),
+  avatar: z.string().optional(),
   headline: z.string().max(100).optional(),
   bio: z.string().max(500).optional(),
   location: z
@@ -36,4 +36,10 @@ export const signupSchema = z.strictObject({
   skills: z.array(z.string()).optional(),
 });
 
+export const loginSchema = z.strictObject({
+  email: z.string().email(),
+  password: z.string().min(3),
+});
+
 export type SignupDTO = z.infer<typeof signupSchema>;
+export type loginDTO = z.infer<typeof loginSchema>;
