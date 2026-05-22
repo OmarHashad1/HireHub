@@ -13,6 +13,9 @@ import { redisService } from "./DB/RedisService.js";
 import { serverLogger } from "./utils/logger.util.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import { configPassport } from "./utils/passport.util.js";
+import passport from "passport";
+
 export const app = async () => {
   const APP: Express = express();
 
@@ -21,11 +24,13 @@ export const app = async () => {
   APP.use(globalLimiter);
   APP.use(express.json());
   APP.use(cookieParser());
+  APP.use(passport.initialize());
 
   try {
     await DBService.connectDB();
     await checkSMTP();
     await redisService.connect();
+    configPassport()
   } catch (error) {
     serverLogger.error({ err: error }, "Startup failed");
     process.exit(1);

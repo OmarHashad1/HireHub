@@ -1,5 +1,5 @@
 import argon2 from "argon2";
-import { ROLE } from "../../enums/user.enums.js";
+import { ROLE, USER_STATUS } from "../../enums/user.enums.js";
 import { UserRepo } from "../../repositories/user.repo.js";
 import {
   ConflictException,
@@ -7,12 +7,9 @@ import {
   UnauthorizedException,
 } from "../../utils/errorHandler.util.js";
 import { loginDTO, SignupDTO } from "../../schemas/auth.schema.js";
-import { generateToken } from "../../utils/token.util.js";
-import { nanoid } from "nanoid";
-import { TokenRepo } from "../../repositories/token.repo.js";
+import { generateTokens, token_secrets } from "../../utils/token.util.js";
 
 const userRepo = new UserRepo();
-const tokenRepo = new TokenRepo();
 export const signup = async (dto: SignupDTO) => {
   const existing = await userRepo.findOne({
     filter: { email: dto.email },
@@ -58,42 +55,19 @@ export const login = async (dto: loginDTO) => {
   if (!user.role) {
     throw new InternalServerErrorException();
   }
+  if (
+    user.status == USER_STATUS.BANNED ||
+    user.status == USER_STATUS.DEACTIVAED
+  ) {
+    throw new UnauthorizedException(
+      "Your account has been suspended. Please contact support.",
+    );
+  }
 
-  const jti = nanoid(25);
-
-  console.log(jti);
-  const accessToken = generateToken({
+  const { accessToken, refreshToken } = await generateTokens({
+    id: user._id as unknown as string,
+    email: user.email,
     role: user.role,
-    payload: {
-      _id: user._id as unknown as string,
-      email: user.email,
-      role: user.role,
-    },
-    options: {
-      jwtid: jti,
-      expiresIn: "30M",
-    },
-  });
-
-  const refreshToken = generateToken({
-    role: user.role,
-    type: "refresh",
-    payload: {
-      _id: user._id as unknown as string,
-      email: user.email,
-      role: user.role,
-    },
-    options: {
-      jwtid: jti,
-      expiresIn: "1W",
-    },
-  });
-  await tokenRepo.create({
-    data: {
-      jti,
-      userId: user._id,
-      expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
-    },
   });
 
   return {
@@ -101,4 +75,19 @@ export const login = async (dto: loginDTO) => {
     refreshToken,
     firstName: user.firstName,
   };
+};
+
+export const googleLogin = async (user: {
+  _id:string ;
+  email: string;
+  role: string;
+  firstName: string;
+}) => {
+  const { accessToken, refreshToken } = await generateTokens({
+    id: user._id as unknown as  string,
+    email: user.email,
+    role: user.role as keyof typeof token_secrets,
+  });
+
+  return { accessToken, refreshToken, firstName: user.firstName };
 };

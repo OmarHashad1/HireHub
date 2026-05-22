@@ -3,5 +3,7 @@ export const ROUTES = {
     BASE: "/auth",
     SIGNUP: "/signup",
     LOGIN: "/login",
+    GOOGLE_LOGIN: "/login/google",
+    GOOGLE_CALLBACK:"/login/google/callback"
   },
 } as const;

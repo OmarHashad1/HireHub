@@ -48,7 +48,7 @@ export abstract class DatabaseRepo<RawDoc> {
     options,
   }: {
     filter: QueryFilter<RawDoc>;
-    projection: ProjectionType<RawDoc> | undefined;
+    projection?: ProjectionType<RawDoc> | undefined;
     options: (QueryOptions<RawDoc> & { lean: false }) | null | undefined;
   }): Promise<HydratedDocument<RawDoc> | null>;
 
@@ -58,17 +58,17 @@ export abstract class DatabaseRepo<RawDoc> {
     options,
   }: {
     filter: QueryFilter<RawDoc>;
-    projection: ProjectionType<RawDoc> | undefined;
+    projection?: ProjectionType<RawDoc> | undefined;
     options: (QueryOptions<RawDoc> & { lean: true }) | null | undefined;
   }): Promise<FlattenMaps<RawDoc> | null>;
 
   public async findOne({
     filter,
-    projection,
     options,
+    projection,
   }: {
     filter: QueryFilter<RawDoc>;
-    projection: ProjectionType<RawDoc> | undefined;
+    projection?: ProjectionType<RawDoc> | undefined;
     options: QueryOptions<RawDoc> | null | undefined;
   }): Promise<HydratedDocument<RawDoc> | FlattenMaps<RawDoc> | null> {
     const payload = await this.model.findOne(filter, projection, options);

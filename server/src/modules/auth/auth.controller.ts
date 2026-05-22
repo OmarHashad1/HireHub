@@ -3,7 +3,7 @@ import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { errorRes, successRes } from "../../utils/response.util.js";
 import { SignupDTO } from "../../schemas/auth.schema.js";
-import { login, signup } from "./auth.service.js";
+import { googleLogin, login, signup } from "./auth.service.js";
 import {
   accessTokenCookieOptions,
   refreshTokenCookieOptions,
@@ -44,7 +44,7 @@ export const loginController = async (
       req.body as loginDTO,
     );
     res.cookie("accessToken", accessToken, accessTokenCookieOptions);
-    res.cookie("refreshTokken", refreshToken, refreshTokenCookieOptions);
+    res.cookie("refreshToken", refreshToken, refreshTokenCookieOptions);
     successRes({
       res,
       message: "Logged in successfully",
@@ -53,5 +53,27 @@ export const loginController = async (
     });
   } catch (err) {
     throw err;
+  }
+};
+
+export const googleCallbackController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { accessToken, refreshToken, firstName } = await googleLogin(
+      req.user as { _id: string; email: string; role: string; firstName: string },
+    );
+    res.cookie("accessToken", accessToken, accessTokenCookieOptions);
+    res.cookie("refreshToken", refreshToken, refreshTokenCookieOptions);
+    successRes({
+      res,
+      message: "Logged in successfully",
+      status: StatusCodes.OK,
+      data: { firstName },
+    });
+  } catch (err) {
+    next(err);
   }
 };

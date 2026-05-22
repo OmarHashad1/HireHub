@@ -38,3 +38,8 @@ export interface verifyTokenParams {
   type: "access" | "refresh";
   token: string;
 }
+
+export interface decodeTokenParams {
+  type: "access" | "refresh";
+  token: string;
+}

@@ -61,7 +61,10 @@ const userSchema = new Schema<IUser>(
     phoneNumber: {
       type: String,
       unique: true,
-      required: true,
+      sparse: true,
+      required: function (this: IUser) {
+        return this.provider === PROVIDER.SYSTEM;
+      },
     },
     provider: {
       type: String,
