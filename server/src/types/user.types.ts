@@ -40,6 +40,7 @@ export interface IUser extends Document {
   googleId: string | null;
   provider: string;
   role: ROLE;
+  age: number;
   avatar?: string | null;
   phoneNumber?: string | null;
   headline?: string | null;

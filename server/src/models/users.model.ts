@@ -1,4 +1,4 @@
-import {  Schema, model,  } from "mongoose";
+import { Schema, model } from "mongoose";
 import {
   EDUCATION_LEVEL,
   PROVIDER,
@@ -28,6 +28,12 @@ const userSchema = new Schema<IUser>(
       index: true,
       required: true,
       unique: true,
+    },
+    age: {
+      type: Number,
+      required: function (this: IUser) {
+        return this.provider === PROVIDER.SYSTEM;
+      },
     },
     password: {
       type: String,
