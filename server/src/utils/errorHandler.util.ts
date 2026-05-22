@@ -28,3 +28,9 @@ export class NotFoundException extends AppError {
     super(message, StatusCodes.NOT_FOUND, options);
   }
 }
+
+export class ConflictException extends AppError {
+  constructor(message: string = "Resource already exists", options?: ErrorOptions) {
+    super(message, StatusCodes.CONFLICT, options);
+  }
+}

@@ -43,7 +43,7 @@ if (process.env.NODE_ENV == "development") {
       }),
     },
     {
-      level: "debug",
+      level: "error",
       stream: pino.transport({
         target: "pino/file",
         options: { destination: resolve("./src/logs/server.log"), mkdir: true },
