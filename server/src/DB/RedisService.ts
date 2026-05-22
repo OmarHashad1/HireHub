@@ -5,7 +5,7 @@ import {
   REDIS_PASSWORD,
   REDIS_PORT,
   REDIS_USERNAME,
-} from "../configs/env.js";
+} from "../configs/env.config.js";
 export class RedisService {
   private readonly client: RedisClientType;
   constructor() {

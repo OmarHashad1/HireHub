@@ -4,7 +4,7 @@ import {
   SMTP_PORT,
   SMTP_SERVICE,
   SMTP_USER,
-} from "../configs/env.js";
+} from "../configs/env.config.js";
 import { serverLogger } from "./logger.util.js";
 import { emailDTO } from "../types/global.types.js";
 

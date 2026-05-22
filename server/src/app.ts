@@ -1,5 +1,5 @@
 import express, { Express, NextFunction, Request, Response } from "express";
-import { PORT } from "./configs/env.js";
+import { CLIENT_URL, PORT } from "./configs/env.config.js";
 import helmet from "helmet";
 import { globalErrorHandler } from "./middlewares/globalErrorHandler.middleware.js";
 import { NotFoundException } from "./utils/errorHandler.util.js";
@@ -11,13 +11,16 @@ import { authRouter } from "./modules/auth/auth.router.js";
 import { ROUTES } from "./routes.js";
 import { redisService } from "./DB/RedisService.js";
 import { serverLogger } from "./utils/logger.util.js";
-
+import cors from "cors";
+import cookieParser from "cookie-parser";
 export const app = async () => {
   const APP: Express = express();
 
-  APP.use(globalLimiter);
   APP.use(helmet());
+  APP.use(cors({ origin: CLIENT_URL, credentials: true }));
+  APP.use(globalLimiter);
   APP.use(express.json());
+  APP.use(cookieParser());
 
   try {
     await DBService.connectDB();

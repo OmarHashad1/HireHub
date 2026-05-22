@@ -7,7 +7,7 @@ import {
   RECRUITER_REFRESH_SECRET,
   USER_ACCESS_SECRET,
   USER_REFRESH_SECRET,
-} from "../configs/env.js";
+} from "../configs/env.config.js";
 import {
   generateTokenParams,
   verifyTokenParams,

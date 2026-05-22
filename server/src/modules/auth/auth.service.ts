@@ -9,8 +9,10 @@ import {
 import { loginDTO, SignupDTO } from "../../schemas/auth.schema.js";
 import { generateToken } from "../../utils/token.util.js";
 import { nanoid } from "nanoid";
-const userRepo = new UserRepo();
+import { TokenRepo } from "../../repositories/token.repo.js";
 
+const userRepo = new UserRepo();
+const tokenRepo = new TokenRepo();
 export const signup = async (dto: SignupDTO) => {
   const existing = await userRepo.findOne({
     filter: { email: dto.email },
@@ -39,10 +41,11 @@ export const login = async (dto: loginDTO) => {
   const user = await userRepo.findOne({
     filter: { email: dto.email },
     projection: {
-      _id: 0,
+      _id: 1,
       role: 1,
       password: 1,
       email: 1,
+      firstName: 1,
     },
     options: { lean: true },
   });
@@ -85,9 +88,17 @@ export const login = async (dto: loginDTO) => {
       expiresIn: "1W",
     },
   });
+  await tokenRepo.create({
+    data: {
+      jti,
+      userId: user._id,
+      expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+    },
+  });
 
   return {
     accessToken,
     refreshToken,
+    firstName: user.firstName,
   };
 };

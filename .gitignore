@@ -52,3 +52,5 @@ uploads
 */.claude
 .claude/*
 CLAUDE.md
+documents
+documents/*

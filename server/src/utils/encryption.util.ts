@@ -3,7 +3,7 @@ import {
   ENCRYPTION_SECRET,
   ENCRYPTION_IV_LENGTH,
   ENCRYPTION_ALGORITHM,
-} from "../configs/env.js";
+} from "../configs/env.config.js";
 
 const KEY = Buffer.from(ENCRYPTION_SECRET, "hex");
 

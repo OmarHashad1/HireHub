@@ -22,9 +22,13 @@ export const REDIS_PASSWORD = process.env.REDIS_PASSWORD as string;
 export const REDIS_HOST = process.env.REDIS_HOST as string;
 export const REDIS_PORT = process.env.REDIS_PORT as unknown as number;
 
-export const USER_ACCESS_SECRET =process.env.USER_ACCESS_SECRET as string
-export const USER_REFRESH_SECRET =process.env.USER_REFRESH_SECRET as string
-export const ADMIN_ACCESS_SECRET =process.env.ADMIN_ACCESS_SECRET as string
-export const ADMIN_REFRESH_SECRET =process.env.ADMIN_REFRESH_SECRET as string
-export const RECRUITER_ACCESS_SECRET =process.env.RECRUITER_ACCESS_SECRET as string
-export const RECRUITER_REFRESH_SECRET =process.env.RECRUITER_REFRESH_SECRET as string
+export const USER_ACCESS_SECRET = process.env.USER_ACCESS_SECRET as string;
+export const USER_REFRESH_SECRET = process.env.USER_REFRESH_SECRET as string;
+export const ADMIN_ACCESS_SECRET = process.env.ADMIN_ACCESS_SECRET as string;
+export const ADMIN_REFRESH_SECRET = process.env.ADMIN_REFRESH_SECRET as string;
+export const RECRUITER_ACCESS_SECRET = process.env
+  .RECRUITER_ACCESS_SECRET as string;
+export const RECRUITER_REFRESH_SECRET = process.env
+  .RECRUITER_REFRESH_SECRET as string;
+
+export const CLIENT_URL = process.env.CLIENT_URL as string;

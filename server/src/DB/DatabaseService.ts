@@ -1,4 +1,4 @@
-import { MONGODB_URI } from "../configs/env.js";
+import { MONGODB_URI } from "../configs/env.config.js";
 import { InternalServerErrorException } from "../utils/errorHandler.util.js";
 import { serverLogger } from "../utils/logger.util.js";
 import mongoose from "mongoose";
