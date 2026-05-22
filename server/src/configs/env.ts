@@ -16,3 +16,8 @@ export const SMTP_SERVICE = process.env.SMTP_SERVICE as string;
 export const ENCRYPTION_SECRET = process.env.ENCRYPTION_SECRET as string;
 export const ENCRYPTION_IV_LENGTH = Number(process.env.ENCRYPTION_IV_LENGTH);
 export const ENCRYPTION_ALGORITHM = process.env.ENCRYPTION_ALGORITHM as string;
+
+export const REDIS_USERNAME = process.env.REDIS_USERNAME as string;
+export const REDIS_PASSWORD = process.env.REDIS_PASSWORD as string;
+export const REDIS_HOST = process.env.REDIS_HOST as string;
+export const REDIS_PORT = process.env.REDIS_PORT as unknown as number;

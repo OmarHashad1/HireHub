@@ -7,6 +7,11 @@ import { DBService } from "./DB/DatabaseService.js";
 import "./models/index.js";
 import { checkSMTP } from "./utils/smtp.util.js";
 import { globalLimiter } from "./utils/limiter.util.js";
+import { authRouter } from "./modules/auth/auth.router.js";
+import { ROUTES } from "./routes.js";
+import { redisService } from "./DB/RedisService.js";
+import { serverLogger } from "./utils/logger.util.js";
+
 export const app = async () => {
   const APP: Express = express();
 
@@ -17,9 +22,13 @@ export const app = async () => {
   try {
     await DBService.connectDB();
     await checkSMTP();
+    await redisService.connect();
   } catch (error) {
+    serverLogger.error({ err: error }, "Startup failed");
     process.exit(1);
   }
+
+  APP.use(ROUTES.AUTH.BASE, authRouter);
 
   APP.all("/{*dummy}", (_req: Request, _res: Response, next: NextFunction) => {
     next(new NotFoundException());
