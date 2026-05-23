@@ -1,9 +1,9 @@
 import { loginDTO } from "./../../schemas/auth.schema.js";
 import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import { errorRes, successRes } from "../../utils/response.util.js";
+import {  successRes } from "../../utils/response.util.js";
 import { SignupDTO } from "../../schemas/auth.schema.js";
-import { googleLogin, login, signup } from "./auth.service.js";
+import { googleLogin, login, refreshToken, signup } from "./auth.service.js";
 import {
   accessTokenCookieOptions,
   refreshTokenCookieOptions,
@@ -22,15 +22,8 @@ export const signupController = async (
       status: StatusCodes.CREATED,
       data: user,
     });
-  } catch (error: any) {
-    if (error?.code == "11000") {
-      return errorRes({
-        res,
-        message: "Phone Number already exists",
-        status: StatusCodes.CONFLICT,
-      });
-    }
-    next(error);
+  } catch (err) {
+    next(err);
   }
 };
 
@@ -52,7 +45,7 @@ export const loginController = async (
       data: { firstName },
     });
   } catch (err) {
-    throw err;
+    next(err);
   }
 };
 
@@ -61,9 +54,15 @@ export const googleCallbackController = async (
   res: Response,
   next: NextFunction,
 ) => {
+  if (!req.user) return next(new Error("OAuth authentication failed"));
   try {
     const { accessToken, refreshToken, firstName } = await googleLogin(
-      req.user as { _id: string; email: string; role: string; firstName: string },
+      req.user as {
+        _id: string;
+        email: string;
+        role: string;
+        firstName: string;
+      },
     );
     res.cookie("accessToken", accessToken, accessTokenCookieOptions);
     res.cookie("refreshToken", refreshToken, refreshTokenCookieOptions);
@@ -73,6 +72,20 @@ export const googleCallbackController = async (
       status: StatusCodes.OK,
       data: { firstName },
     });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const refreshTokenController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const accessToken = await refreshToken(req.cookies.refreshToken);
+    res.cookie("accessToken", accessToken, accessTokenCookieOptions);
+    successRes({ res, message: "Token refreshed", status: StatusCodes.OK });
   } catch (err) {
     next(err);
   }

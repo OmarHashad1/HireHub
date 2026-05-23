@@ -21,9 +21,9 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
         status: StatusCodes.UNAUTHORIZED,
       });
     }
-    const isTokenActive = tokenRepo.findOne({
+    const isTokenActive = await tokenRepo.findOne({
       filter: {
-        userId: user?._id,
+        userId: user._id,
         jti,
       },
       options: {
@@ -55,6 +55,8 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
         status: StatusCodes.UNAUTHORIZED,
       });
     }
+
+    req.user = user;
 
     next();
   } catch (err: any) {

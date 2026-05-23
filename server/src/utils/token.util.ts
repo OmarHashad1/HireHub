@@ -41,12 +41,11 @@ export const token_secrets = {
 
 export const generateToken = ({
   payload,
-  role,
   options,
   type = "access",
 }: generateTokenParams) => {
   try {
-    const secretKey = token_secrets[role][type];
+    const secretKey = token_secrets[payload.role][type];
     if (!secretKey) throw new Error("Invalid token or user type");
     return jwt.sign(payload, secretKey, options);
   } catch (err) {
@@ -115,23 +114,21 @@ export const generateTokens = async ({
   const jti = nanoid(25);
 
   const accessToken = generateToken({
-    role,
     payload: {
-      _id: id ,
+      _id: id,
       email: email,
       role: role,
     },
     options: {
       jwtid: jti,
-      expiresIn: "1S",
+      expiresIn: "30M",
     },
   });
 
   const refreshToken = generateToken({
-    role: role,
     type: "refresh",
     payload: {
-      _id: id ,
+      _id: id,
       email: email,
       role: role,
     },

@@ -23,7 +23,6 @@ export interface errorResponseDTO<T> {
 }
 
 export interface generateTokenParams {
-  role: keyof typeof token_secrets;
   type?: "access" | "refresh";
   payload: {
     _id: string;

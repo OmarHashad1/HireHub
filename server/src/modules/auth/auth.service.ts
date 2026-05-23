@@ -7,7 +7,12 @@ import {
   UnauthorizedException,
 } from "../../utils/errorHandler.util.js";
 import { loginDTO, SignupDTO } from "../../schemas/auth.schema.js";
-import { generateTokens, token_secrets } from "../../utils/token.util.js";
+import {
+  decodeToken,
+  generateToken,
+  generateTokens,
+  token_secrets,
+} from "../../utils/token.util.js";
 
 const userRepo = new UserRepo();
 export const signup = async (dto: SignupDTO) => {
@@ -78,16 +83,38 @@ export const login = async (dto: loginDTO) => {
 };
 
 export const googleLogin = async (user: {
-  _id:string ;
+  _id: string;
   email: string;
   role: string;
   firstName: string;
 }) => {
   const { accessToken, refreshToken } = await generateTokens({
-    id: user._id as unknown as  string,
+    id: user._id as unknown as string,
     email: user.email,
     role: user.role as keyof typeof token_secrets,
   });
 
   return { accessToken, refreshToken, firstName: user.firstName };
+};
+
+export const refreshToken = async (token: string) => {
+  const { user, jti } = await decodeToken({
+    token,
+    type: "refresh",
+  });
+  if (!user) throw new Error("Invalid Session. Please try again");
+
+  const accessToken = generateToken({
+    payload: {
+      _id: user._id as unknown as string,
+      email: user.email,
+      role: user.role as keyof typeof token_secrets,
+    },
+    options: {
+      jwtid: jti,
+      expiresIn: "30M",
+    },
+  });
+
+  return accessToken;
 };

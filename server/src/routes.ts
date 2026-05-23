@@ -4,6 +4,7 @@ export const ROUTES = {
     SIGNUP: "/signup",
     LOGIN: "/login",
     GOOGLE_LOGIN: "/login/google",
-    GOOGLE_CALLBACK:"/login/google/callback"
+    GOOGLE_CALLBACK: "/login/google/callback",
+    REFRESH_TOKEN: "/refresh-token",
   },
 } as const;
