@@ -1,6 +1,13 @@
 import { Response } from "express";
 import { token_secrets } from "../utils/token.util.js";
 import { SignOptions } from "jsonwebtoken";
+import { IUser } from "./user.types.js";
+
+declare global {
+  namespace Express {
+    interface User extends IUser {}
+  }
+}
 
 export interface emailDTO {
   to: string;

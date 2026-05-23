@@ -8,6 +8,7 @@ import {
 } from "../configs/env.config.js";
 
 import { PROVIDER } from "../enums/user.enums.js";
+import { IUser } from "../types/user.types.js";
 
 const userRepo = new UserRepo();
 
@@ -46,7 +47,7 @@ export const configPassport = () => {
                 provider: PROVIDER.GOOGLE,
               },
             }));
-          cb(null, user);
+          cb(null, user as IUser);
         } catch (err) {
           cb(err);
         }

@@ -23,3 +23,8 @@ export enum USER_STATUS {
   DEACTIVAED = "deativated",
   BANNED = "BANNED",
 }
+
+export enum LOGOUT_TYPE {
+  ALL = "all",
+  DEVICE = "device",
+}

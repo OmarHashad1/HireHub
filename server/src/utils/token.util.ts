@@ -18,12 +18,10 @@ import {
   UnauthorizedException,
 } from "./errorHandler.util.js";
 import { UserRepo } from "../repositories/user.repo.js";
-import { TokenRepo } from "../repositories/token.repo.js";
 
 import { nanoid } from "nanoid";
 
 const userRepo = new UserRepo();
-const tokenRepo = new TokenRepo();
 export const token_secrets = {
   user: {
     access: USER_ACCESS_SECRET,
@@ -137,13 +135,7 @@ export const generateTokens = async ({
       expiresIn: "1W",
     },
   });
-  await tokenRepo.create({
-    data: {
-      jti,
-      userId: id,
-      expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
-    },
-  });
+  
 
   return { refreshToken, accessToken };
 };

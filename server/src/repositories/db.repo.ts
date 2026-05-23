@@ -7,6 +7,10 @@ import {
   ProjectionType,
   QueryOptions,
   FlattenMaps,
+  UpdateQuery,
+  UpdateWriteOpResult,
+  MongooseUpdateQueryOptions,
+  mongo,
 } from "mongoose";
 
 export abstract class DatabaseRepo<RawDoc> {
@@ -73,5 +77,35 @@ export abstract class DatabaseRepo<RawDoc> {
   }): Promise<HydratedDocument<RawDoc> | FlattenMaps<RawDoc> | null> {
     const payload = await this.model.findOne(filter, projection, options);
     return payload;
+  }
+
+  public async updateOne({
+    filter,
+    update,
+    options,
+  }: {
+    filter: QueryFilter<RawDoc>;
+    update: UpdateQuery<RawDoc>;
+    options?: mongo.UpdateOptions & MongooseUpdateQueryOptions<RawDoc>;
+  }): Promise<UpdateWriteOpResult>;
+
+  public async updateOne({
+    filter,
+    update,
+  }: {
+    filter: QueryFilter<RawDoc>;
+    update: UpdateQuery<RawDoc>;
+  }): Promise<UpdateWriteOpResult>;
+
+  public async updateOne({
+    filter,
+    update,
+    options,
+  }: {
+    filter: QueryFilter<RawDoc>;
+    update: UpdateQuery<RawDoc>;
+    options?: mongo.UpdateOptions & MongooseUpdateQueryOptions<RawDoc>;
+  }): Promise<UpdateWriteOpResult> {
+    return this.model.updateOne(filter, update, options);
   }
 }

@@ -57,7 +57,7 @@ export const googleCallbackController = async (
   if (!req.user) return next(new Error("OAuth authentication failed"));
   try {
     const { accessToken, refreshToken, firstName } = await googleLogin(
-      req.user as {
+      req.user as unknown as {
         _id: string;
         email: string;
         role: string;

@@ -15,6 +15,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import { configPassport } from "./utils/passport.util.js";
 import passport from "passport";
+import { userRouter } from "./modules/user/user.router.js";
 
 export const app = async () => {
   const APP: Express = express();
@@ -30,12 +31,12 @@ export const app = async () => {
     await DBService.connectDB();
     await checkSMTP();
     await redisService.connect();
-    configPassport()
+    configPassport();
   } catch (error) {
     serverLogger.error({ err: error }, "Startup failed");
     process.exit(1);
   }
-
+  APP.use(ROUTES.USER.BASE, userRouter);
   APP.use(ROUTES.AUTH.BASE, authRouter);
 
   APP.all("/{*dummy}", (_req: Request, _res: Response, next: NextFunction) => {

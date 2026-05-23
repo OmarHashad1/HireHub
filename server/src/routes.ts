@@ -7,4 +7,8 @@ export const ROUTES = {
     GOOGLE_CALLBACK: "/login/google/callback",
     REFRESH_TOKEN: "/refresh-token",
   },
+  USER: {
+    BASE: "/user",
+    LOGOUT: "/logout",
+  },
 } as const;
