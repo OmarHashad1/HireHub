@@ -6,7 +6,6 @@ import { USER_STATUS } from "../enums/user.enums.js";
 import { IUser } from "../types/user.types.js";
 import { redisService } from "../DB/RedisService.js";
 
-//const tokenRepo = new TokenRepo();
 
 export const auth = async (req: Request, res: Response, next: NextFunction) => {
   try {
