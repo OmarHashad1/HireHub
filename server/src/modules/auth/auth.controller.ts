@@ -1,9 +1,27 @@
-import { loginDTO } from "./../../schemas/auth.schema.js";
+import {
+  changePasswordDTO,
+  checkForgotPasswordOtpDTO,
+  confirmEmailDTO,
+  loginDTO,
+  resetPasswordDTO,
+  sendforgotPassowrdOtpDTO,
+} from "./../../schemas/auth.schema.js";
 import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import {  successRes } from "../../utils/response.util.js";
+import { successRes } from "../../utils/response.util.js";
 import { SignupDTO } from "../../schemas/auth.schema.js";
-import { googleLogin, login, refreshToken, signup } from "./auth.service.js";
+import {
+  changePassword,
+  checkForgotPasswordOTP,
+  googleLogin,
+  login,
+  refreshToken,
+  resetPassword,
+  sendForgotPasswordOTP,
+  sendVerificationEmail,
+  signup,
+  verifyEmail,
+} from "./auth.service.js";
 import {
   accessTokenCookieOptions,
   refreshTokenCookieOptions,
@@ -77,6 +95,91 @@ export const googleCallbackController = async (
   }
 };
 
+export const sendVerificationEmailController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    await sendVerificationEmail(req.body);
+    successRes({
+      res,
+      message: "Verification code sent successfully",
+      status: StatusCodes.OK,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const verifyEmailController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    await verifyEmail(req.body as confirmEmailDTO);
+    successRes({
+      res,
+      message: "Email verified successfully",
+      status: StatusCodes.OK,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const sendForgotPasswordOTPController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    await sendForgotPasswordOTP(req.body as sendforgotPassowrdOtpDTO);
+    successRes({
+      res,
+      message: "Password reset code sent successfully",
+      status: StatusCodes.OK,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const checkForgotPasswordOTPController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    await checkForgotPasswordOTP(req.body as checkForgotPasswordOtpDTO);
+    successRes({
+      res,
+      message: "OTP verified. You may now reset your password",
+      status: StatusCodes.OK,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const resetPasswordController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    await resetPassword(req.body as resetPasswordDTO);
+    successRes({
+      res,
+      message: "Password reset successfully",
+      status: StatusCodes.OK,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const refreshTokenController = async (
   req: Request,
   res: Response,
@@ -86,6 +189,19 @@ export const refreshTokenController = async (
     const accessToken = await refreshToken(req.cookies.refreshToken);
     res.cookie("accessToken", accessToken, accessTokenCookieOptions);
     successRes({ res, message: "Token refreshed", status: StatusCodes.OK });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const changePasswordController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    await changePassword(req.body as changePasswordDTO);
+    successRes({ res, message: "Password changed successfully", status: 200 });
   } catch (err) {
     next(err);
   }

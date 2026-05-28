@@ -35,7 +35,7 @@ export class RedisService {
     }
   }
   public revokedTokenPrefix(userId: string | Types.ObjectId) {
-    return `user:${userId}:revokedToken`;
+    return `user:${userId}:REVOKED_TOKEN`;
   }
 
   public revokedTokenKey({
@@ -47,13 +47,44 @@ export class RedisService {
   }) {
     return `${this.revokedTokenPrefix(userId)}:${jti}`;
   }
+
+  public otpKey({
+    userId,
+    subject,
+  }: {
+    userId: Types.ObjectId | string;
+    subject: string;
+  }) {
+    return `user:${userId}:OTP:${subject}`;
+  }
+
+  public otpKeyPenalty({
+    userId,
+    subject,
+  }: {
+    userId: Types.ObjectId | string;
+    subject: string;
+  }) {
+    return `user:${userId}:OTP:${subject}:penalty`;
+  }
+
+  public otpKeyBlock({
+    userId,
+    subject,
+  }: {
+    userId: Types.ObjectId | string;
+    subject: string;
+  }) {
+    return `user:${userId}:OTP:${subject}:block`;
+  }
+
   public async set({
     key,
     value,
     ttl = null,
   }: {
     key: string;
-    value: string | number;
+    value: string | number | object;
     ttl?: number | null;
   }): Promise<string | null> {
     try {
@@ -65,7 +96,7 @@ export class RedisService {
       return null;
     }
   }
-  public async get(key: string): Promise<string | null> {
+  public async get(key: string): Promise<string | object | null> {
     try {
       return await this.client.get(key);
     } catch (err) {
@@ -93,13 +124,23 @@ export class RedisService {
     }
   }
 
-  public async getTTL(key: string): Promise<number | null> {
+  public async getTTL(key: string): Promise<number> {
     try {
       return await this.client.ttl(key);
+    } catch (err) {
+      serverLogger.error({ err }, "Redis Error");
+      return -2;
+    }
+  }
+
+  public async incr(key: string): Promise<number | null> {
+    try {
+      return await this.client.incr(key);
     } catch (err) {
       serverLogger.error({ err }, "Redis Error");
       return null;
     }
   }
 }
+
 export const redisService = new RedisService();

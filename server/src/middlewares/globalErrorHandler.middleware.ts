@@ -18,5 +18,6 @@ export const globalErrorHandler = (
   res.status(status).json({
     statusCode: status,
     message: err.message || "Internal Server Error",
+    ...(err.data && { data: err.data }),
   });
 };

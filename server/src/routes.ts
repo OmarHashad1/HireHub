@@ -6,6 +6,12 @@ export const ROUTES = {
     GOOGLE_LOGIN: "/login/google",
     GOOGLE_CALLBACK: "/login/google/callback",
     REFRESH_TOKEN: "/refresh-token",
+    SEND_VERIFY_EMAIL: "/send-verify-email",
+    VERIFY_EMAIL: "/verify-email",
+    SEND_FORGOT_PASSWORD_OTP: "/forgot-password",
+    VERIFY_FORGOT_PASSWORD_OTP: "/forgot-password/verify-otp",
+    RESET_PASSWORD: "/reset-password",
+    CHANGE_PASSWORD: "/change-password",
   },
   USER: {
     BASE: "/user",
