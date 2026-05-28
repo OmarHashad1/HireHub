@@ -11,6 +11,7 @@ import {
   TooManyRequestsException,
   UnauthorizedException,
 } from "../../utils/errorHandler.util.js";
+import { activityLogger, serverLogger } from "../../utils/logger.util.js";
 import {
   checkForgotPasswordOtpDTO,
   confirmEmailDTO,
@@ -48,6 +49,8 @@ export const signup = async (dto: SignupDTO) => {
     data: { ...dto, password: hashedPassword, role: ROLE.USER },
   });
 
+  activityLogger.info({ event: "user.signup", userId: user._id, email: user.email });
+
   return {
     id: user._id,
     firstName: user.firstName,
@@ -73,15 +76,19 @@ export const login = async (dto: loginDTO) => {
     !user ||
     !user.password ||
     !(await argon2.verify(user.password, dto.password))
-  )
+  ) {
+    activityLogger.warn({ event: "user.login.failed", email: dto.email });
     throw new UnauthorizedException("Email or password is not correct");
+  }
   if (!user.role) {
+    serverLogger.error({ event: "user.login.missing-role", userId: user._id, email: user.email });
     throw new InternalServerErrorException();
   }
   if (
     user.status == USER_STATUS.BANNED ||
     user.status == USER_STATUS.DEACTIVAED
   ) {
+    activityLogger.warn({ event: "user.login.blocked", userId: user._id, email: user.email, status: user.status });
     throw new UnauthorizedException(
       "Your account has been suspended. Please contact support.",
     );
@@ -92,6 +99,8 @@ export const login = async (dto: loginDTO) => {
     email: user.email,
     role: user.role,
   });
+
+  activityLogger.info({ event: "user.login", userId: user._id, email: user.email });
 
   return {
     accessToken,
@@ -111,6 +120,8 @@ export const googleLogin = async (user: {
     email: user.email,
     role: user.role as keyof typeof token_secrets,
   });
+
+  activityLogger.info({ event: "user.login.google", userId: user._id, email: user.email });
 
   return { accessToken, refreshToken, firstName: user.firstName };
 };
@@ -195,6 +206,8 @@ export const sendVerificationEmail = async ({ email }: sendVerifyEmailDTO) => {
     subject: "Email Verification",
     html: `<h1>${otp}<h1>`,
   });
+
+  activityLogger.info({ event: "user.verify-email.otp-sent", userId: user._id, email });
 };
 
 export const verifyEmail = async ({ email, otp }: confirmEmailDTO) => {
@@ -238,6 +251,7 @@ export const verifyEmail = async ({ email, otp }: confirmEmailDTO) => {
         redisService.set({ key: blockKey, value: 1, ttl: 7 * 60 }),
         redisService.del(otpKey),
       ]);
+      activityLogger.warn({ event: "user.verify-email.blocked", userId, email });
       throw new TooManyRequestsException(
         "Too many failed attempts. Please request a new code",
       );
@@ -248,6 +262,7 @@ export const verifyEmail = async ({ email, otp }: confirmEmailDTO) => {
       value: { hashedOTP, attempts: newAttempts },
       ttl: remainingTtl,
     });
+    activityLogger.warn({ event: "user.verify-email.otp-failed", userId, remainingAttempts: 5 - newAttempts });
     throw new UnauthorizedException("Invalid verification code", {
       data: { remainingAttempts: 5 - newAttempts },
     });
@@ -256,6 +271,8 @@ export const verifyEmail = async ({ email, otp }: confirmEmailDTO) => {
   user.isEmailVerified = true;
   await user.save();
   await redisService.del(otpKey);
+
+  activityLogger.info({ event: "user.verify-email.success", userId, email });
 };
 
 export const sendForgotPasswordOTP = async ({
@@ -314,6 +331,8 @@ export const sendForgotPasswordOTP = async ({
     subject: "Forgot Password",
     html: `<h1>${otp}<h1>`,
   });
+
+  activityLogger.info({ event: "user.forgot-password.otp-sent", userId: user._id, email });
 };
 
 export const checkForgotPasswordOTP = async ({
@@ -362,6 +381,7 @@ export const checkForgotPasswordOTP = async ({
         redisService.set({ key: blockKey, value: 1, ttl: 7 * 60 }),
         redisService.del(otpKey),
       ]);
+      activityLogger.warn({ event: "user.forgot-password.blocked", userId, email });
       throw new TooManyRequestsException(
         "Too many failed attempts. Please request a new code",
       );
@@ -372,6 +392,7 @@ export const checkForgotPasswordOTP = async ({
       value: { hashedOTP, attempts: newAttempts },
       ttl: remainingTtl,
     });
+    activityLogger.warn({ event: "user.forgot-password.otp-failed", userId, remainingAttempts: 5 - newAttempts });
     throw new UnauthorizedException("Invalid verification code", {
       data: { remainingAttempts: 5 - newAttempts },
     });
@@ -382,6 +403,8 @@ export const checkForgotPasswordOTP = async ({
     value: { verified: true },
     ttl: 10 * 60,
   });
+
+  activityLogger.info({ event: "user.forgot-password.otp-verified", userId, email });
 };
 
 export const resetPassword = async ({
@@ -419,6 +442,8 @@ export const resetPassword = async ({
   });
 
   await redisService.del(otpKey);
+
+  activityLogger.info({ event: "user.password.reset", userId, email });
 };
 
 export const changePassword = async ({
@@ -442,8 +467,10 @@ export const changePassword = async ({
     );
   }
 
-  if (!(await argon2.verify(user.password as string, password)))
+  if (!(await argon2.verify(user.password as string, password))) {
+    activityLogger.warn({ event: "user.password.change-failed", userId: user._id, email });
     throw new UnauthorizedException("Invalid password");
+  }
 
   await userRepo.updateOne({
     filter: {
@@ -457,4 +484,6 @@ export const changePassword = async ({
       },
     },
   });
+
+  activityLogger.info({ event: "user.password.changed", userId: user._id, email });
 };
