@@ -13,12 +13,10 @@ const logSchema = new Schema<ILog>(
     },
     message: {
       type: String,
-      required: true,
     },
     actor: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: true,
     },
     action: {
       type: String,

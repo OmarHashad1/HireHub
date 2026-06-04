@@ -40,7 +40,10 @@ export const signupController = async (
       status: StatusCodes.CREATED,
       data: user,
     });
-  } catch (err) {
+  } catch (err: any) {
+    if (err?.code == 11000) {
+      err.statusCode = StatusCodes.BAD_REQUEST;
+    }
     next(err);
   }
 };

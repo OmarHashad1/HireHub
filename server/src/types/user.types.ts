@@ -56,5 +56,7 @@ export interface IUser extends Document {
   credentialsChangedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  deletedAt: Date | null;
+  restoredAt: Date | null;
   fullName: string;
 }

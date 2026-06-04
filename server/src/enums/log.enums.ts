@@ -1,4 +1,5 @@
 export enum LOG_ACTION {
+  CREATE_USER = "create_user",
   BAN_USER = "ban_user",
   UNBAN_USER = "unban_user",
   DELETE_USER = "delete_user",
@@ -30,8 +31,8 @@ export enum LOG_TARGET_TYPE {
 export enum LOG_LEVEL {
   Trace = 10,
   Debug = 20,
-  Info  = 30,
-  Warn  = 40,
+  Info = 30,
+  Warn = 40,
   Error = 50,
   Fatal = 60,
 }

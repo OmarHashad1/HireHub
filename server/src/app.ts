@@ -31,11 +31,13 @@ export const app = async () => {
     await DBService.connectDB();
     await checkSMTP();
     await redisService.connect();
+
     configPassport();
   } catch (error) {
     serverLogger.error({ err: error }, "Startup failed");
     process.exit(1);
   }
+
   APP.use(ROUTES.USER.BASE, userRouter);
   APP.use(ROUTES.AUTH.BASE, authRouter);
 
