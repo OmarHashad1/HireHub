@@ -1,4 +1,4 @@
-import { Response } from "express";
+import { Response, Request } from "express";
 import { token_secrets } from "../utils/token.util.js";
 import { SignOptions } from "jsonwebtoken";
 import { IUser } from "./user.types.js";
@@ -48,4 +48,10 @@ export interface verifyTokenParams {
 export interface decodeTokenParams {
   type: "access" | "refresh";
   token: string;
+}
+
+export interface uploadOpts {
+  maxSizeMB: number;
+  allowedMimTypes: String[];
+  buildFileName: (req: Request, file: Express.Multer.File) => string;
 }

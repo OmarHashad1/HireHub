@@ -16,7 +16,6 @@ import cookieParser from "cookie-parser";
 import { configPassport } from "./utils/passport.util.js";
 import passport from "passport";
 import { userRouter } from "./modules/user/user.router.js";
-
 export const app = async () => {
   const APP: Express = express();
 
@@ -26,7 +25,7 @@ export const app = async () => {
   APP.use(express.json());
   APP.use(cookieParser());
   APP.use(passport.initialize());
-
+  
   try {
     await DBService.connectDB();
     await checkSMTP();
