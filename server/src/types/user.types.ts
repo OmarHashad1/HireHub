@@ -37,6 +37,7 @@ export interface IUser extends Document {
   lastName: string;
   email: string;
   password: string | null;
+  oldPasswords: string[];
   googleId: string | null;
   provider: string;
   role: ROLE;

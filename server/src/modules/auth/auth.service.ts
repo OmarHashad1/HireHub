@@ -32,6 +32,7 @@ import { generateOTP } from "../../utils/generateOTP.util.js";
 import { sendMail } from "../../utils/smtp.util.js";
 import { Types } from "mongoose";
 import { LOG_ACTION, LOG_TARGET_TYPE } from "../../enums/log.enums.js";
+import { IUser } from "../../types/user.types.js";
 
 const userRepo = new UserRepo();
 
@@ -137,8 +138,11 @@ export const googleLogin = async (user: {
 
   activityLogger.info({
     event: "user.login.google",
-    userId: user._id,
+    actor: user._id,
     email: user.email,
+    action: LOG_ACTION.LOGIN_GOOGLE,
+    targetType: LOG_TARGET_TYPE.USER,
+    targetId: user._id,
   });
 
   return { accessToken, refreshToken, firstName: user.firstName };
@@ -227,8 +231,11 @@ export const sendVerificationEmail = async ({ email }: sendVerifyEmailDTO) => {
 
   activityLogger.info({
     event: "user.verify-email.otp-sent",
-    userId: user._id,
+    actor: user._id,
     email,
+    action: LOG_ACTION.SEND_VERIFY_EMAIL_OTP,
+    targetType: LOG_TARGET_TYPE.USER,
+    targetId: user._id,
   });
 };
 
@@ -275,8 +282,11 @@ export const verifyEmail = async ({ email, otp }: confirmEmailDTO) => {
       ]);
       activityLogger.warn({
         event: "user.verify-email.blocked",
-        userId,
+        actor: userId,
         email,
+        action: LOG_ACTION.VERIFY_EMAIL,
+        targetType: LOG_TARGET_TYPE.USER,
+        targetId: userId,
       });
       throw new TooManyRequestsException(
         "Too many failed attempts. Please request a new code",
@@ -290,8 +300,11 @@ export const verifyEmail = async ({ email, otp }: confirmEmailDTO) => {
     });
     activityLogger.warn({
       event: "user.verify-email.otp-failed",
-      userId,
+      actor: userId,
       remainingAttempts: 5 - newAttempts,
+      action: LOG_ACTION.VERIFY_EMAIL,
+      targetType: LOG_TARGET_TYPE.USER,
+      targetId: userId,
     });
     throw new UnauthorizedException("Invalid verification code", {
       data: { remainingAttempts: 5 - newAttempts },
@@ -302,7 +315,14 @@ export const verifyEmail = async ({ email, otp }: confirmEmailDTO) => {
   await user.save();
   await redisService.del(otpKey);
 
-  activityLogger.info({ event: "user.verify-email.success", userId, email });
+  activityLogger.info({
+    event: "user.verify-email.success",
+    actor: userId,
+    email,
+    action: LOG_ACTION.VERIFY_EMAIL,
+    targetType: LOG_TARGET_TYPE.USER,
+    targetId: userId,
+  });
 };
 
 export const sendForgotPasswordOTP = async ({
@@ -364,8 +384,11 @@ export const sendForgotPasswordOTP = async ({
 
   activityLogger.info({
     event: "user.forgot-password.otp-sent",
-    userId: user._id,
+    actor: user._id,
     email,
+    action: LOG_ACTION.SEND_FORGOT_PASSWORD_OTP,
+    targetType: LOG_TARGET_TYPE.USER,
+    targetId: user._id,
   });
 };
 
@@ -417,8 +440,11 @@ export const checkForgotPasswordOTP = async ({
       ]);
       activityLogger.warn({
         event: "user.forgot-password.blocked",
-        userId,
+        actor: userId,
         email,
+        action: LOG_ACTION.VERIFY_FORGOT_PASSWORD_OTP,
+        targetType: LOG_TARGET_TYPE.USER,
+        targetId: userId,
       });
       throw new TooManyRequestsException(
         "Too many failed attempts. Please request a new code",
@@ -432,8 +458,11 @@ export const checkForgotPasswordOTP = async ({
     });
     activityLogger.warn({
       event: "user.forgot-password.otp-failed",
-      userId,
+      actor: userId,
       remainingAttempts: 5 - newAttempts,
+      action: LOG_ACTION.VERIFY_FORGOT_PASSWORD_OTP,
+      targetType: LOG_TARGET_TYPE.USER,
+      targetId: userId,
     });
     throw new UnauthorizedException("Invalid verification code", {
       data: { remainingAttempts: 5 - newAttempts },
@@ -448,8 +477,11 @@ export const checkForgotPasswordOTP = async ({
 
   activityLogger.info({
     event: "user.forgot-password.otp-verified",
-    userId,
+    actor: userId,
     email,
+    action: LOG_ACTION.VERIFY_FORGOT_PASSWORD_OTP,
+    targetType: LOG_TARGET_TYPE.USER,
+    targetId: userId,
   });
 };
 
@@ -459,7 +491,7 @@ export const resetPassword = async ({
 }: resetPasswordDTO) => {
   const user = await userRepo.findOne({
     filter: { email },
-    projection: { _id: 1, provider: 1 },
+    projection: { _id: 1, provider: 1, password: 1 },
     options: { lean: true },
   });
   if (!user) throw new NotFoundException("User not found");
@@ -480,28 +512,41 @@ export const resetPassword = async ({
     );
 
   const hashedPassword = await argon2.hash(newPassword);
+  user.oldPasswords.map((password) => {
+    if (password == hashedPassword)
+      throw new BadRequestException("New Password was used in the past");
+  });
   await userRepo.updateOne({
-    filter: { _id: userId },
+    filter: {
+      _id: user._id,
+      email: user.email,
+    },
     update: {
-      $set: { password: hashedPassword, credentialsChangedAt: new Date() },
+      $set: {
+        password: await argon2.hash(newPassword),
+        credentialsChangedAt: new Date(),
+      },
+      $push: { oldPasswords: user.password },
     },
   });
 
   await redisService.del(otpKey);
 
-  activityLogger.info({ event: "user.password.reset", userId, email });
+  activityLogger.info({
+    event: "user.password.reset",
+    actor: userId,
+    email,
+    action: LOG_ACTION.RESET_PASSWORD,
+    targetType: LOG_TARGET_TYPE.USER,
+    targetId: userId,
+  });
 };
 
 export const changePassword = async ({
   password,
-  email,
   newPassword,
-}: changePasswordDTO) => {
-  const user = await userRepo.findOne({
-    filter: { email },
-    projection: { _id: 1, email: 1, password: 1, provider: 1 },
-    options: { lean: true },
-  });
+  user,
+}: changePasswordDTO & { user: IUser }) => {
   if (!user) throw new NotFoundException("User not found");
 
   if (user.provider !== PROVIDER.SYSTEM)
@@ -516,12 +561,20 @@ export const changePassword = async ({
   if (!(await argon2.verify(user.password as string, password))) {
     activityLogger.warn({
       event: "user.password.change-failed",
-      userId: user._id,
-      email,
+      actor: user._id,
+      email: user.email,
+      action: LOG_ACTION.CHANGE_PASSWORD,
+      targetType: LOG_TARGET_TYPE.USER,
+      targetId: user._id,
     });
     throw new UnauthorizedException("Invalid password");
   }
 
+  for (const oldPassword of user.oldPasswords) {
+    if (await argon2.verify(oldPassword as string, newPassword)) {
+      throw new BadRequestException("New Password was used in the past");
+    }
+  }
   await userRepo.updateOne({
     filter: {
       _id: user._id,
@@ -532,12 +585,16 @@ export const changePassword = async ({
         password: await argon2.hash(newPassword),
         credentialsChangedAt: new Date(),
       },
+      $push: { oldPasswords: user.password },
     },
   });
 
   activityLogger.info({
     event: "user.password.changed",
-    userId: user._id,
-    email,
+    actor: user._id,
+    email: user.email,
+    action: LOG_ACTION.CHANGE_PASSWORD,
+    targetType: LOG_TARGET_TYPE.USER,
+    targetId: user._id,
   });
 };

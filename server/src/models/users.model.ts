@@ -44,6 +44,10 @@ export const userSchema = new Schema<IUser>(
       },
       default: null,
     },
+    oldPasswords: {
+      type: [String],
+      default: [],
+    },
     googleId: {
       type: String,
       required: function (this: IUser) {

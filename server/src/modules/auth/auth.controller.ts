@@ -1,5 +1,4 @@
 import {
-  changePasswordDTO,
   checkForgotPasswordOtpDTO,
   confirmEmailDTO,
   loginDTO,
@@ -26,6 +25,7 @@ import {
   accessTokenCookieOptions,
   refreshTokenCookieOptions,
 } from "../../configs/cookie.config.js";
+import { IUser } from "../../types/user.types.js";
 
 export const signupController = async (
   req: Request,
@@ -203,7 +203,8 @@ export const changePasswordController = async (
   next: NextFunction,
 ) => {
   try {
-    await changePassword(req.body as changePasswordDTO);
+    const { newPassword, password } = req.body;
+    await changePassword({ newPassword, password, user: req.user as IUser });
     successRes({ res, message: "Password changed successfully", status: 200 });
   } catch (err) {
     next(err);

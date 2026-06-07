@@ -102,6 +102,7 @@ authRouter.patch(
 authRouter.patch(
   ROUTES.AUTH.CHANGE_PASSWORD,
   authLimiter,
+  auth,
   validate({ body: changePasswordSchema }),
-  changePasswordController
+  changePasswordController,
 );
