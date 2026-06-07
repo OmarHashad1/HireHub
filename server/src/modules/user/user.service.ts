@@ -3,6 +3,8 @@ import { IUser } from "../../types/user.types.js";
 import { decodeToken } from "../../utils/token.util.js";
 import { redisService } from "../../DB/RedisService.js";
 import { UserRepo } from "../../repositories/user.repo.js";
+import { uploadAsset } from "../../utils/s3.util.js";
+import { multerStorageType } from "../../enums/multer.enums.js";
 
 const userRepo = new UserRepo();
 
@@ -46,4 +48,26 @@ export const logout = async ({
       throw new Error("Invalid Logout Type");
     }
   }
+};
+
+export const changeAvatarService = async ({
+  user,
+  file,
+}: {
+  user: IUser;
+  file: Express.Multer.File;
+}) => {
+  const bucketKey = await uploadAsset({
+    path: `users/${user._id}`,
+    file,
+    storageStrategy: multerStorageType.DESK,
+  });
+  await userRepo.updateOne({
+    filter: {
+      _id: user._id,
+    },
+    update: {
+      avatar: bucketKey,
+    },
+  });
 };

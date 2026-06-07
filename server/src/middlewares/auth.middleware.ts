@@ -5,6 +5,7 @@ import { StatusCodes } from "http-status-codes";
 import { USER_STATUS } from "../enums/user.enums.js";
 import { IUser } from "../types/user.types.js";
 import { redisService } from "../DB/RedisService.js";
+import { AppError } from "../utils/errorHandler.util.js";
 
 
 export const auth = async (req: Request, res: Response, next: NextFunction) => {
@@ -63,8 +64,11 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
     errorRes({
       res,
       message: err.message,
-      status: StatusCodes.INTERNAL_SERVER_ERROR,
-      error: err,
+      status:
+        err instanceof AppError
+          ? err.statusCode
+          : StatusCodes.INTERNAL_SERVER_ERROR,
+      error: err instanceof AppError ? err.data : undefined,
     });
   }
 };

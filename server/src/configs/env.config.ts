@@ -5,6 +5,8 @@ config({
   path: resolve(`./.env.${process.env.NODE_ENV && "development"}`),
 });
 
+export const APPLICATION_NAME = process.env.APPLICATION_NAME as string;
+
 export const PORT = process.env.PORT as string;
 export const MONGODB_URI = process.env.MONGODB_URI as string;
 
@@ -36,3 +38,10 @@ export const CLIENT_URL = process.env.CLIENT_URL as string;
 export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID as string;
 export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET as string;
 export const GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL as string;
+
+export const AWS_REGION = process.env.AWS_REGION as string;
+export const AWS_ACCESSS_KEY_ID = process.env.AWS_ACCESSS_KEY_ID as string;
+export const AWS_SECRET_ACCESS_KEY = process.env
+  .AWS_SECRET_ACCESS_KEY as string;
+export const AWS_EXPIRATION = process.env.AWS_EXPIRATION as unknown as number;
+export const AWS_BUCKET_NAME = process.env.AWS_BUCKET_NAME as string;

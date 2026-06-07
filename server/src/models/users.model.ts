@@ -218,7 +218,8 @@ userSchema.post(
       );
     } else {
       const doc = docs as HydratedDocument<IUser> | null;
-      if (doc) doc.phoneNumber = decrypt(doc.phoneNumber as string);
+      if (doc && doc.phoneNumber)
+        doc.phoneNumber = decrypt(doc?.phoneNumber as string);
     }
   },
 );

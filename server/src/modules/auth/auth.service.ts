@@ -83,13 +83,12 @@ export const login = async (dto: loginDTO) => {
     !user.password ||
     !(await argon2.verify(user.password, dto.password))
   ) {
-    activityLogger.warn({ event: "user.login.failed", email: dto.email });
     throw new UnauthorizedException("Email or password is not correct");
   }
   if (!user.role) {
     serverLogger.error({
-      event: "user.login.missing-role",
-      userId: user._id,
+      action: LOG_ACTION.BLOCK_LOGIN,
+      actor: user._id,
       email: user.email,
     });
     throw new InternalServerErrorException();
@@ -99,10 +98,12 @@ export const login = async (dto: loginDTO) => {
     user.status == USER_STATUS.DEACTIVAED
   ) {
     activityLogger.warn({
-      event: "user.login.blocked",
-      userId: user._id,
+      action: LOG_ACTION.BLOCK_LOGIN,
+      actor: user._id,
       email: user.email,
       status: user.status,
+      targetType: LOG_TARGET_TYPE.USER,
+      targetId: user._id,
     });
     throw new UnauthorizedException(
       "Your account has been suspended. Please contact support.",
@@ -113,12 +114,6 @@ export const login = async (dto: loginDTO) => {
     id: user._id as unknown as string,
     email: user.email,
     role: user.role,
-  });
-
-  activityLogger.info({
-    event: "user.login",
-    userId: user._id,
-    email: user.email,
   });
 
   return {

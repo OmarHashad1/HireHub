@@ -72,9 +72,19 @@ export const decodeToken = async ({
   type = "access",
 }: decodeTokenParams) => {
   try {
-    const { role } = jwt.decode(token) as { role: keyof typeof token_secrets };
+    const decoded = jwt.decode(token) as {
+      role: keyof typeof token_secrets;
+    } | null;
 
-    const jwtPayload = verifyToken({ role, type, token }) as unknown as {
+    if (!decoded?.role) {
+      throw new UnauthorizedException("Invalid or expired token");
+    }
+
+    const jwtPayload = verifyToken({
+      role: decoded.role,
+      type,
+      token,
+    }) as unknown as {
       _id: string;
       jti: string;
       email: string;

@@ -1,5 +1,7 @@
 export enum LOG_ACTION {
   CREATE_USER = "create_user",
+  BLOCK_LOGIN = "block_login",
+  
   BAN_USER = "ban_user",
   UNBAN_USER = "unban_user",
   DELETE_USER = "delete_user",

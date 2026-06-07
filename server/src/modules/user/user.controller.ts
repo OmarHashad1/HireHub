@@ -1,8 +1,9 @@
 import { NextFunction, Request, Response } from "express";
 import { LOGOUT_TYPE } from "../../enums/user.enums.js";
-import { logout } from "./user.service.js";
+import { changeAvatarService, logout } from "./user.service.js";
 import { errorRes, successRes } from "../../utils/response.util.js";
 import { StatusCodes } from "http-status-codes";
+import { IUser } from "../../types/user.types.js";
 
 export const logoutController = async (
   req: Request,
@@ -26,6 +27,26 @@ export const logoutController = async (
       res,
       message: "Logout successfully",
       status: StatusCodes.OK,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const changeAvatarController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    await changeAvatarService({
+      user: req.user as IUser,
+      file: req.file as Express.Multer.File,
+    });
+    successRes({
+      res,
+      status: 200,
+      message: "Avatar changed successfully",
     });
   } catch (err) {
     next(err);

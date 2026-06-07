@@ -2,6 +2,8 @@ import { Response, Request } from "express";
 import { token_secrets } from "../utils/token.util.js";
 import { SignOptions } from "jsonwebtoken";
 import { IUser } from "./user.types.js";
+import { ObjectCannedACL } from "@aws-sdk/client-s3";
+import { multerStorageType } from "../enums/multer.enums.js";
 
 declare global {
   namespace Express {
@@ -54,4 +56,13 @@ export interface uploadOpts {
   maxSizeMB: number;
   allowedMimTypes: String[];
   buildFileName: (req: Request, file: Express.Multer.File) => string;
+}
+
+export interface IS3UploadAssets {
+  storageStrategy?:multerStorageType
+  Bucket?: string;
+  file: Express.Multer.File;
+  path: string;
+  ACL?: ObjectCannedACL;
+  contentType?: string;
 }

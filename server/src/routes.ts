@@ -16,5 +16,6 @@ export const ROUTES = {
   USER: {
     BASE: "/user",
     LOGOUT: "/logout",
+    CHANGE_AVATAR: "/change-avatar",
   },
 } as const;
