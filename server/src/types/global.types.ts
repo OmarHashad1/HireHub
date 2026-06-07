@@ -58,11 +58,21 @@ export interface uploadOpts {
   buildFileName: (req: Request, file: Express.Multer.File) => string;
 }
 
-export interface IS3UploadAssets {
-  storageStrategy?:multerStorageType
+export interface IS3UploadAsset {
+  storageStrategy?: multerStorageType;
+  Bucket?: string;
+  Key?: string;
+  file: Express.Multer.File;
+  path: string;
+  ACL?: ObjectCannedACL;
+  contentType?: string | undefined;
+}
+
+export interface IS3UploadAsset {
+  storageStrategy?: multerStorageType;
   Bucket?: string;
   file: Express.Multer.File;
   path: string;
   ACL?: ObjectCannedACL;
-  contentType?: string;
+  contentType?: string | undefined;
 }

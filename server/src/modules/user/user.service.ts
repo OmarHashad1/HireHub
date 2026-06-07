@@ -62,6 +62,7 @@ export const changeAvatarService = async ({
     file,
     storageStrategy: multerStorageType.DESK,
   });
+
   await userRepo.updateOne({
     filter: {
       _id: user._id,

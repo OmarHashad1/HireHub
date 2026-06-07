@@ -7,7 +7,7 @@ import {
   AWS_REGION,
   AWS_SECRET_ACCESS_KEY,
 } from "../configs/env.config.js";
-import { IS3UploadAssets } from "../types/global.types.js";
+import { IS3UploadAsset } from "../types/global.types.js";
 import { randomUUID } from "node:crypto";
 import { InternalServerErrorException } from "./errorHandler.util.js";
 import { multerStorageType } from "../enums/multer.enums.js";
@@ -28,7 +28,7 @@ export const uploadAsset = async ({
   file,
   ACL,
   contentType,
-}: IS3UploadAssets): Promise<string> => {
+}: IS3UploadAsset): Promise<string> => {
   const command = new PutObjectCommand({
     Bucket,
     Key: `${APPLICATION_NAME}/${path}/${file.fieldname}/${file.filename ? file.filename : randomUUID() + `${file.originalname}`}`,
@@ -43,6 +43,5 @@ export const uploadAsset = async ({
     throw new InternalServerErrorException("Failed to upload asset");
 
   await client.send(command);
-
   return command.input?.Key;
 };
