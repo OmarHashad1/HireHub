@@ -1,9 +1,10 @@
 import * as z from "zod";
+import { PHONE_REGEX } from "../utils/regex.util.js";
 
 export const signupSchema = z.strictObject({
   firstName: z.string().min(3).max(30),
   lastName: z.string().min(3).max(30),
-  email: z.string().email(),
+  email: z.email(),
   age: z.coerce.number(),
   password: z
     .string()
@@ -15,7 +16,9 @@ export const signupSchema = z.strictObject({
     .regex(/[^A-Za-z0-9]/, {
       error: "Password must contain at least one special character",
     }),
-  phoneNumber: z.string().min(7).max(20),
+  phoneNumber: z.string().min(7).max(20).regex(PHONE_REGEX, {
+    error: "Phone number must start with + followed by a valid country code and number",
+  }),
   avatar: z.string().optional(),
   headline: z.string().max(100).optional(),
   bio: z.string().max(500).optional(),
@@ -27,40 +30,40 @@ export const signupSchema = z.strictObject({
     .optional(),
   socialMedia: z
     .object({
-      linkedin: z.string().url().optional(),
-      github: z.string().url().optional(),
-      leetcode: z.string().url().optional(),
-      portfolio: z.string().url().optional(),
+      linkedin: z.url().optional(),
+      github: z.url().optional(),
+      leetcode: z.url().optional(),
+      portfolio: z.url().optional(),
     })
     .optional(),
   skills: z.array(z.string()).optional(),
 });
 
 export const loginSchema = z.strictObject({
-  email: z.string().email(),
+  email: z.email(),
   password: z.string().min(3),
 });
 
 export const confirmEmail = z.strictObject({
-  email: z.string().email(),
+  email: z.email(),
   otp: z.string().length(6),
 });
 
 export const sendVerifyEmailSchema = z.strictObject({
-  email: z.string().email(),
+  email: z.email(),
 });
 
 export const sendforgotPassowrdOtpSchema = z.strictObject({
-  email: z.string().email(),
+  email: z.email(),
 });
 
 export const checkForgotPasswordOtpSchema = z.strictObject({
-  email: z.string().email(),
+  email: z.email(),
   otp: z.string().length(6),
 });
 
 export const resetPasswordSchema = z.strictObject({
-  email: z.string().email(),
+  email: z.email(),
   newPassword: z
     .string()
     .min(8)
@@ -74,7 +77,6 @@ export const resetPasswordSchema = z.strictObject({
 });
 
 export const changePasswordSchema = z.strictObject({
-
   password: z.string().min(3),
   newPassword: z
     .string()

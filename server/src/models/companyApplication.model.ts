@@ -1,10 +1,12 @@
-import { Schema, model } from "mongoose";
+import { HydratedDocument, Schema, model } from "mongoose";
 import {
   COMPANY_APPLICATION_STATUS,
   INDUSTRY,
   COMPANY_SIZE,
 } from "../enums/companyApplication.enums.js";
 import { ICompanyApplication } from "../types/companyApplication.types.js";
+import { sendMail } from "../utils/smtp.util.js";
+import { decrypt } from "../utils/encryption.util.js";
 
 const companyApplicationSchema = new Schema<ICompanyApplication>(
   {
@@ -46,7 +48,7 @@ const companyApplicationSchema = new Schema<ICompanyApplication>(
     description: {
       type: String,
       required: true,
-      maxLength: 1000,
+      maxLength: 100,
     },
     documents: {
       commercialRegistration: {
@@ -91,6 +93,54 @@ const companyApplicationSchema = new Schema<ICompanyApplication>(
   },
 );
 
+companyApplicationSchema.pre(
+  "save",
+  function (this: HydratedDocument<ICompanyApplication> & { newDoc: boolean }) {
+    if (this.isNew) {
+      this.newDoc = true;
+    }
+  },
+);
+
+companyApplicationSchema.post(
+  "save",
+  async function (
+    this: HydratedDocument<ICompanyApplication> & { newDoc: boolean },
+  ) {
+    if (this.newDoc) {
+      await sendMail({
+        to: this.companyEmail,
+        subject: "Application Received!",
+        html: "<h1>Application Received</h1>",
+      });
+    }
+  },
+);
+
+companyApplicationSchema.post(
+  ["find", "findOne"],
+  function (
+    this: any,
+    docs:
+      | HydratedDocument<ICompanyApplication>[]
+      | HydratedDocument<ICompanyApplication>,
+  ) {
+    if (this.op == "find") {
+      (docs as HydratedDocument<ICompanyApplication>[]).map(
+        (doc: ICompanyApplication) => {
+          if (doc.phone) doc.phone = decrypt(doc.phone as string);
+        },
+      );
+    } else {
+      const doc = docs as HydratedDocument<ICompanyApplication> | null;
+      if (doc && doc.phone) {
+        doc.phone = decrypt(doc?.phone as string);
+      }
+    }
+
+    console.log(docs);
+  },
+);
 export const companyApplicationModel = model<ICompanyApplication>(
   "CompanyApplication",
   companyApplicationSchema,

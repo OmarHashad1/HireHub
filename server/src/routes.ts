@@ -18,4 +18,8 @@ export const ROUTES = {
     LOGOUT: "/logout",
     CHANGE_AVATAR: "/change-avatar",
   },
+  company: {
+    BASE: "/company",
+    COMPANY_APLLICATION: "/company-application",
+  },
 } as const;
