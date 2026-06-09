@@ -1,5 +1,6 @@
 import { Request } from "express";
 import multer, { FileFilterCallback } from "multer";
+import { randomUUID } from "node:crypto";
 import { tmpdir } from "node:os";
 import { uploadOpts } from "../types/global.types.js";
 import { BadRequestException } from "../utils/errorHandler.util.js";
@@ -58,15 +59,13 @@ export const uploadCV = cloudUpload({
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   ],
-  buildFileName: (req, file) =>
-    `${req.user?._id}__${req.user?.fullName}__${file.originalname}}`,
-});
+  buildFileName: (_req, file) => `${randomUUID()}__${file.originalname}`,
+}, multerStorageType.DESK);
 
 export const uploadAvatar = cloudUpload({
   maxSizeMB: 2,
   allowedMimTypes: ["image/jpeg", "image/png", "image/webp"],
-  buildFileName: (req, file) =>
-    `${req.user?._id}__${req.user?.firstName}-${req.user?.lastName}__${file.originalname}}`,
+  buildFileName: (_req, file) => `${randomUUID()}__${file.originalname}`,
 },multerStorageType.DESK);
 
 export const uploadCompanyApplicationDoc = cloudUpload(
@@ -79,8 +78,7 @@ export const uploadCompanyApplicationDoc = cloudUpload(
       "application/msword",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     ],
-    buildFileName: (req, file) =>
-      `company__application__${file.fieldname}_)${req.body.companyName}}`,
+    buildFileName: (_req, file) => `${randomUUID()}__${file.originalname}`,
   },
   multerStorageType.DESK,
 );

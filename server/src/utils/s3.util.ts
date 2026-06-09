@@ -1,4 +1,9 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 
 import {
   APPLICATION_NAME,
@@ -12,6 +17,7 @@ import { randomUUID } from "node:crypto";
 import { InternalServerErrorException } from "./errorHandler.util.js";
 import { multerStorageType } from "../enums/multer.enums.js";
 import { createReadStream } from "node:fs";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export const client: S3Client = new S3Client({
   region: AWS_REGION,
@@ -20,6 +26,16 @@ export const client: S3Client = new S3Client({
     secretAccessKey: AWS_SECRET_ACCESS_KEY,
   },
 });
+
+export const getPresignedURL = async ({
+  command,
+  expiresIn,
+}: {
+  command: PutObjectCommand;
+  expiresIn: { expiresIn: number };
+}) => {
+  return await getSignedUrl(client, command, expiresIn);
+};
 
 export const uploadAsset = async ({
   storageStrategy = multerStorageType.MEM,
@@ -44,4 +60,26 @@ export const uploadAsset = async ({
 
   await client.send(command);
   return command.input?.Key;
+};
+
+export const getAsset = async ({
+  Bucket = AWS_BUCKET_NAME,
+  Key,
+}: {
+  Bucket?: string;
+  Key: string;
+}) => {
+  const command = new GetObjectCommand({ Bucket, Key });
+  return await getPresignedURL({ command, expiresIn: { expiresIn: 130 } });
+};
+
+export const deleteAsset = async ({
+  Bucket = AWS_BUCKET_NAME,
+  Key,
+}: {
+  Bucket?: string;
+  Key: string;
+}) => {
+  const command = new DeleteObjectCommand({ Bucket, Key });
+  return await client.send(command);
 };

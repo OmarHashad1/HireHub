@@ -3,8 +3,9 @@ import { IUser } from "../../types/user.types.js";
 import { decodeToken } from "../../utils/token.util.js";
 import { redisService } from "../../DB/RedisService.js";
 import { UserRepo } from "../../repositories/user.repo.js";
-import { uploadAsset } from "../../utils/s3.util.js";
+import { deleteAsset, uploadAsset } from "../../utils/s3.util.js";
 import { multerStorageType } from "../../enums/multer.enums.js";
+import { BadRequestException } from "../../utils/errorHandler.util.js";
 
 const userRepo = new UserRepo();
 
@@ -50,13 +51,16 @@ export const logout = async ({
   }
 };
 
-export const changeAvatarService = async ({
+export const changeAvatar = async ({
   user,
   file,
 }: {
   user: IUser;
   file: Express.Multer.File;
 }) => {
+  if (user.avatar) {
+    await deleteAsset({ Key: user.avatar });
+  }
   const bucketKey = await uploadAsset({
     path: `users/${user._id}`,
     file,
@@ -70,5 +74,16 @@ export const changeAvatarService = async ({
     update: {
       avatar: bucketKey,
     },
+  });
+};
+
+export const deleteAvatar = async (user: IUser) => {
+  if (!user.avatar) {
+    throw new BadRequestException("No User Avatar found to delete");
+  }
+  await deleteAsset({ Key: user.avatar as string });
+  await userRepo.updateOne({
+    filter: { _id: user._id, email: user.email },
+    update: { $unset: { avatar: 1 } },
   });
 };

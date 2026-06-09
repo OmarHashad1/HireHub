@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { LOGOUT_TYPE } from "../../enums/user.enums.js";
-import { changeAvatarService, logout } from "./user.service.js";
+import { changeAvatar, deleteAvatar, logout } from "./user.service.js";
 import { errorRes, successRes } from "../../utils/response.util.js";
 import { StatusCodes } from "http-status-codes";
 import { IUser } from "../../types/user.types.js";
@@ -39,7 +39,7 @@ export const changeAvatarController = async (
   next: NextFunction,
 ) => {
   try {
-    await changeAvatarService({
+    await changeAvatar({
       user: req.user as IUser,
       file: req.file as Express.Multer.File,
     });
@@ -47,6 +47,23 @@ export const changeAvatarController = async (
       res,
       status: 200,
       message: "Avatar changed successfully",
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const deleteAvatarController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    await deleteAvatar(req.user as IUser);
+    successRes({
+      res,
+      message: "Avatar Deleted Successfully",
+      status: StatusCodes.OK,
     });
   } catch (err) {
     next(err);

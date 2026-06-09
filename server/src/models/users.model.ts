@@ -217,7 +217,8 @@ userSchema.post(
     if (this.op == "find") {
       (docs as HydratedDocument<IUser>[]).forEach(
         (doc: HydratedDocument<IUser>) => {
-          if (doc.phoneNumber) doc.phoneNumber = decrypt(doc.phoneNumber as string);
+          if (doc.phoneNumber)
+            doc.phoneNumber = decrypt(doc.phoneNumber as string);
         },
       );
     } else {

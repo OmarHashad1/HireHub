@@ -137,8 +137,6 @@ companyApplicationSchema.post(
         doc.phone = decrypt(doc?.phone as string);
       }
     }
-
-    console.log(docs);
   },
 );
 export const companyApplicationModel = model<ICompanyApplication>(

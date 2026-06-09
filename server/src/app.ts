@@ -17,7 +17,9 @@ import { configPassport } from "./utils/passport.util.js";
 import passport from "passport";
 import { userRouter } from "./modules/user/user.router.js";
 import { companyRouter } from "./modules/company/user.router.js";
-import { companyApplicationModel } from "./models/index.js";
+import { requestFileMiddleware } from "./middlewares/requestFile.middleware.js";
+import { auth } from "./middlewares/auth.middleware.js";
+
 export const app = async () => {
   const APP: Express = express();
 
@@ -39,8 +41,7 @@ export const app = async () => {
     process.exit(1);
   }
 
-  await companyApplicationModel.find();
-
+  APP.use("/uploads/*path", auth, requestFileMiddleware);
   APP.use(ROUTES.USER.BASE, userRouter);
   APP.use(ROUTES.AUTH.BASE, authRouter);
   APP.use(ROUTES.company.BASE, companyRouter);

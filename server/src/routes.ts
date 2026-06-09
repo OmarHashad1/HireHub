@@ -17,6 +17,7 @@ export const ROUTES = {
     BASE: "/user",
     LOGOUT: "/logout",
     CHANGE_AVATAR: "/change-avatar",
+    DELETE_AVATAR: "/delete-avatar",
   },
   company: {
     BASE: "/company",
