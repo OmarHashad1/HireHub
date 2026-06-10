@@ -38,7 +38,6 @@ export const cloudUpload = (
     file: Express.Multer.File,
     callback: FileFilterCallback,
   ) => {
-    console.log(file)
     if (allowedMimTypes && !allowedMimTypes.includes(file.mimetype)) {
       return callback(new BadRequestException(`File type is not allowed`));
     }
