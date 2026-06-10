@@ -11,7 +11,12 @@ export const validate = (schema: schemaKeys) => {
     const issues: z.core.$ZodIssue[] = [];
     validationKeys.forEach((key) => {
       const validationRes = schema[key]!.safeParse(req[key]);
-      if (!validationRes.success) issues.push(...validationRes.error.issues);
+      if (!validationRes.success) {
+        issues.push(...validationRes.error.issues);
+      } else {
+        (req as unknown as Record<string, unknown>)[key as string] =
+          validationRes.data;
+      }
     });
     if (issues.length > 0) {
       return errorRes({
