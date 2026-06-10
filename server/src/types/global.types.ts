@@ -68,10 +68,10 @@ export interface IS3UploadAsset {
   contentType?: string | undefined;
 }
 
-export interface IS3UploadAsset {
+export interface IS3UploadAssets {
   storageStrategy?: multerStorageType;
   Bucket?: string;
-  file: Express.Multer.File;
+  files: Express.Multer.File[];
   path: string;
   ACL?: ObjectCannedACL;
   contentType?: string | undefined;
