@@ -12,7 +12,7 @@ import {
   AWS_REGION,
   AWS_SECRET_ACCESS_KEY,
 } from "../configs/env.config.js";
-import { IS3UploadAsset } from "../types/global.types.js";
+import { IS3UploadAsset, IS3UploadAssets } from "../types/global.types.js";
 import { randomUUID } from "node:crypto";
 import { InternalServerErrorException } from "./errorHandler.util.js";
 import { multerStorageType } from "../enums/multer.enums.js";
@@ -62,6 +62,28 @@ export const uploadAsset = async ({
   return command.input?.Key;
 };
 
+export const uploadAssets = async ({
+  files,
+  path = "/company/global",
+}: IS3UploadAssets) => {
+  const filesLinks: Record<string, string> = {
+    taxCard: "",
+    commercialRegistration: "",
+  };
+
+  await Promise.all(
+    files.map(async (file) => {
+      const link = await uploadAsset({
+        storageStrategy: multerStorageType.DESK,
+        file,
+        path,
+      });
+      filesLinks[file.fieldname as keyof typeof filesLinks] = link;
+    }),
+  );
+
+  return filesLinks;
+};
 export const getAsset = async ({
   Bucket = AWS_BUCKET_NAME,
   Key,
