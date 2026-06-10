@@ -16,7 +16,7 @@ import cookieParser from "cookie-parser";
 import { configPassport } from "./utils/passport.util.js";
 import passport from "passport";
 import { userRouter } from "./modules/user/user.router.js";
-import { companyRouter } from "./modules/company/user.router.js";
+import { companyRouter } from "./modules/company/company.router.js";
 import { requestFileMiddleware } from "./middlewares/requestFile.middleware.js";
 import { auth } from "./middlewares/auth.middleware.js";
 
