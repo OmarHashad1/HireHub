@@ -21,6 +21,7 @@ export const cloudUpload = (
             file: Express.Multer.File,
             callback: (error: Error | null, destination: string) => void,
           ) {
+
             callback(null, tmpdir());
           },
           filename(
@@ -37,6 +38,7 @@ export const cloudUpload = (
     file: Express.Multer.File,
     callback: FileFilterCallback,
   ) => {
+    console.log(file)
     if (allowedMimTypes && !allowedMimTypes.includes(file.mimetype)) {
       return callback(new BadRequestException(`File type is not allowed`));
     }
@@ -52,23 +54,29 @@ export const cloudUpload = (
   });
 };
 
-export const uploadCV = cloudUpload({
-  maxSizeMB: 2,
-  allowedMimTypes: [
-    "application/pdf",
-    "application/msword",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  ],
-  buildFileName: (_req, file) => `${randomUUID()}__${file.originalname}`,
-}, multerStorageType.DESK);
+export const uploadCV = cloudUpload(
+  {
+    maxSizeMB: 2,
+    allowedMimTypes: [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ],
+    buildFileName: (_req, file) => `${randomUUID()}__${file.originalname}`,
+  },
+  multerStorageType.DESK,
+);
 
-export const uploadAvatar = cloudUpload({
-  maxSizeMB: 2,
-  allowedMimTypes: ["image/jpeg", "image/png", "image/webp"],
-  buildFileName: (_req, file) => `${randomUUID()}__${file.originalname}`,
-},multerStorageType.DESK);
+export const uploadAvatar = cloudUpload(
+  {
+    maxSizeMB: 2,
+    allowedMimTypes: ["image/jpeg", "image/png", "image/webp"],
+    buildFileName: (_req, file) => `${randomUUID()}__${file.originalname}`,
+  },
+  multerStorageType.DESK,
+);
 
-export const uploadCompanyApplicationDoc = cloudUpload(
+export const uploadApplicationDoc = cloudUpload(
   {
     maxSizeMB: 10,
     allowedMimTypes: [
