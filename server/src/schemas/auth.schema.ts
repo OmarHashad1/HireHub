@@ -17,7 +17,8 @@ export const signupSchema = z.strictObject({
       error: "Password must contain at least one special character",
     }),
   phoneNumber: z.string().min(7).max(20).regex(PHONE_REGEX, {
-    error: "Phone number must start with + followed by a valid country code and number",
+    error:
+      "Phone number must start with + followed by a valid country code and number",
   }),
   avatar: z.string().optional(),
   headline: z.string().max(100).optional(),
@@ -42,6 +43,7 @@ export const signupSchema = z.strictObject({
 export const loginSchema = z.strictObject({
   email: z.email(),
   password: z.string().min(3),
+  FCM: z.string(),
 });
 
 export const confirmEmail = z.strictObject({

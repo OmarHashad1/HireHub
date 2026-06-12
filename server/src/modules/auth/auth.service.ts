@@ -33,6 +33,7 @@ import { sendMail } from "../../utils/smtp.util.js";
 import { Types } from "mongoose";
 import { LOG_ACTION, LOG_TARGET_TYPE } from "../../enums/log.enums.js";
 import { IUser } from "../../types/user.types.js";
+import { sendNotification } from "../../utils/notification.util.js";
 
 const userRepo = new UserRepo();
 
@@ -117,6 +118,12 @@ export const login = async (dto: loginDTO) => {
     role: user.role,
   });
 
+  redisService.addFCM(user._id, dto.FCM);
+
+  sendNotification({
+    userId: user._id,
+    data: { title: "Login Attempt", body: "Login successfully" },
+  });
   return {
     accessToken,
     refreshToken,

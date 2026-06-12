@@ -28,10 +28,10 @@ export const USER_ACCESS_SECRET = process.env.USER_ACCESS_SECRET as string;
 export const USER_REFRESH_SECRET = process.env.USER_REFRESH_SECRET as string;
 export const ADMIN_ACCESS_SECRET = process.env.ADMIN_ACCESS_SECRET as string;
 export const ADMIN_REFRESH_SECRET = process.env.ADMIN_REFRESH_SECRET as string;
-export const RECRUITER_ACCESS_SECRET = process.env
-  .RECRUITER_ACCESS_SECRET as string;
-export const RECRUITER_REFRESH_SECRET = process.env
-  .RECRUITER_REFRESH_SECRET as string;
+export const COMPANY_ACCESS_SECRET = process.env
+  .COMPANY_ACCESS_SECRET as string;
+export const COMPANY_REFRESH_SECRET = process.env
+  .COMPANY_REFRESH_SECRET as string;
 
 export const CLIENT_URL = process.env.CLIENT_URL as string;
 

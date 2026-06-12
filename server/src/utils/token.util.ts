@@ -3,8 +3,8 @@ import { ROLE } from "../enums/user.enums.js";
 import {
   ADMIN_ACCESS_SECRET,
   ADMIN_REFRESH_SECRET,
-  RECRUITER_ACCESS_SECRET,
-  RECRUITER_REFRESH_SECRET,
+  COMPANY_ACCESS_SECRET,
+  COMPANY_REFRESH_SECRET,
   USER_ACCESS_SECRET,
   USER_REFRESH_SECRET,
 } from "../configs/env.config.js";
@@ -27,9 +27,9 @@ export const token_secrets = {
     access: USER_ACCESS_SECRET,
     refresh: USER_REFRESH_SECRET,
   },
-  recruiter: {
-    access: RECRUITER_ACCESS_SECRET,
-    refresh: RECRUITER_REFRESH_SECRET,
+  company: {
+    access: COMPANY_ACCESS_SECRET,
+    refresh: COMPANY_REFRESH_SECRET,
   },
   admin: {
     access: ADMIN_ACCESS_SECRET,
@@ -145,7 +145,6 @@ export const generateTokens = async ({
       expiresIn: "1W",
     },
   });
-  
 
   return { refreshToken, accessToken };
 };
