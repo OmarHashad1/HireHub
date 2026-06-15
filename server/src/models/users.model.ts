@@ -9,6 +9,7 @@ import { IUser } from "../types/user.types.js";
 import argon2 from "argon2";
 import { decrypt, encrypt } from "../utils/encryption.util.js";
 import { sendMail } from "../utils/smtp.util.js";
+import { calculateAge } from "../utils/age.util.js";
 export const userSchema = new Schema<IUser>(
   {
     firstName: {
@@ -31,11 +32,15 @@ export const userSchema = new Schema<IUser>(
       required: true,
       unique: true,
     },
-    age: {
-      type: Number,
+    DOB: {
+      type: Date,
       required: function (this: IUser) {
         return this.provider === PROVIDER.SYSTEM;
       },
+    },
+    age: {
+      type: Number,
+      defualt: null,
     },
     password: {
       type: String,
@@ -147,9 +152,6 @@ export const userSchema = new Schema<IUser>(
     deletedAt: {
       type: Date,
     },
-    restoredAt: {
-      type: Date,
-    },
   },
   {
     toJSON: { virtuals: true, getters: true },
@@ -183,6 +185,9 @@ userSchema.pre(
     if (this.isDirectModified("phoneNumber")) {
       this.phoneNumber = encrypt(this.phoneNumber as string);
     }
+    if (this.isDirectModified("DOB")) {
+      this.age = calculateAge(this.DOB);
+    }
   },
 );
 
@@ -198,15 +203,6 @@ userSchema.post(
     }
   },
 );
-
-userSchema.pre(["findOne", "find"], function () {
-  const query = this.getFilter();
-  if (query.paranoId) {
-    this.setQuery({ ...query });
-  } else {
-    this.setQuery({ ...query, deletedAt: { $exists: false } });
-  }
-});
 
 userSchema.post(
   ["findOne", "find"],
@@ -228,4 +224,5 @@ userSchema.post(
     }
   },
 );
+
 export const userModel = model<IUser>("User", userSchema);

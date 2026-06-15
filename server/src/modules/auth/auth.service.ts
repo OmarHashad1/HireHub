@@ -498,7 +498,7 @@ export const resetPassword = async ({
 }: resetPasswordDTO) => {
   const user = await userRepo.findOne({
     filter: { email },
-    projection: { _id: 1, provider: 1, password: 1 },
+    projection: { _id: 1, provider: 1, password: 1, oldPasswords: 1 },
     options: { lean: true },
   });
   if (!user) throw new NotFoundException("User not found");
@@ -519,18 +519,17 @@ export const resetPassword = async ({
     );
 
   const hashedPassword = await argon2.hash(newPassword);
-  user.oldPasswords.map((password) => {
-    if (password == hashedPassword)
+  for (const oldPassword of user.oldPasswords ?? []) {
+    if (await argon2.verify(oldPassword as string, newPassword))
       throw new BadRequestException("New Password was used in the past");
-  });
+  }
   await userRepo.updateOne({
     filter: {
       _id: user._id,
-      email: user.email,
     },
     update: {
       $set: {
-        password: await argon2.hash(newPassword),
+        password: hashedPassword,
         credentialsChangedAt: new Date(),
       },
       $push: { oldPasswords: user.password },

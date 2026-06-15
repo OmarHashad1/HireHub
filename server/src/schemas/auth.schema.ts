@@ -5,7 +5,7 @@ export const signupSchema = z.strictObject({
   firstName: z.string().min(3).max(30),
   lastName: z.string().min(3).max(30),
   email: z.email(),
-  age: z.coerce.number(),
+  DOB: z.coerce.date(),
   password: z
     .string()
     .min(8)

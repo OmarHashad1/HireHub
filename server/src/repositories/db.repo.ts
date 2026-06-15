@@ -183,4 +183,12 @@ export abstract class DatabaseRepo<RawDoc> {
   }): Promise<UpdateWriteOpResult> {
     return this.model.updateOne(filter, update, options);
   }
+
+  public async deleteOne({
+    filter,
+  }: {
+    filter: QueryFilter<RawDoc>;
+  }): Promise<mongo.DeleteResult> {
+    return this.model.deleteOne(filter);
+  }
 }

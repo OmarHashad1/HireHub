@@ -9,7 +9,31 @@ export const globalErrorHandler = (
   res: Response,
   _next: NextFunction,
 ): void => {
-  const status = err.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
+  let status = err.statusCode;
+  let message = err.message;
+
+  // Normalize known non-AppError errors (multer, mongoose/mongo) so they don't
+  // fall through to a generic 500.
+  if (!status) {
+    const raw = err as unknown as {
+      name?: string;
+      code?: number | string;
+      keyValue?: Record<string, unknown>;
+    };
+
+    if (raw.name === "MulterError") {
+      status = StatusCodes.BAD_REQUEST;
+      if (raw.code === "LIMIT_FILE_SIZE") message = "File is too large";
+    } else if (raw.code === 11000) {
+      status = StatusCodes.CONFLICT;
+      const field = Object.keys(raw.keyValue ?? {})[0];
+      message = field ? `${field} already exists` : "Resource already exists";
+    } else if (raw.name === "ValidationError" || raw.name === "CastError") {
+      status = StatusCodes.BAD_REQUEST;
+    }
+  }
+
+  status = status || StatusCodes.INTERNAL_SERVER_ERROR;
 
   if (status >= 500) {
     serverLogger.error({ err }, err.message);
@@ -17,7 +41,7 @@ export const globalErrorHandler = (
 
   res.status(status).json({
     statusCode: status,
-    message: err.message || "Internal Server Error",
+    message: message || "Internal Server Error",
     ...(err.data && { data: err.data }),
   });
 };

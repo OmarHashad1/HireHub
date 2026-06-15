@@ -10,6 +10,7 @@ export const changeRole = (allowedRoles: ROLE[] = [ROLE.USER]) => {
           "You do not have permission to access this resource",
         );
       }
+      next();
     } catch (err) {
       next(err);
     }
