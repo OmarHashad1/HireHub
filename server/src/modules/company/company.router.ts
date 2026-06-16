@@ -11,7 +11,7 @@ import { uploadApplicationDoc } from "../../utils/multer.utils.js";
 export const companyRouter: Router = Router();
 
 companyRouter.post(
-  ROUTES.company.COMPANY_APLLICATION,
+  ROUTES.COMPANY.COMPANY_APLLICATION,
   uploadApplicationDoc.fields([
     { name: "taxCard", maxCount: 1 },
     { name: "commercialRegistration", maxCount: 1 },
