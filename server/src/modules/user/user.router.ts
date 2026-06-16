@@ -16,6 +16,8 @@ import {
   removeExperienceController,
   sendChangeEmailOtpController,
   sendDeleteAccountOtpController,
+  updateEducationController,
+  updateExperienceController,
   updateProfileController,
 } from "./user.controller.js";
 import { auth } from "../../middlewares/auth.middleware.js";
@@ -31,6 +33,8 @@ import {
   experienceSchema,
   objectIdParamSchema,
   sendChangeEmailOtpSchema,
+  updateEducationSchema,
+  updateExperienceSchema,
   updateProfileSchema,
 } from "../../schemas/user.schema.js";
 
@@ -138,4 +142,20 @@ userRouter.delete(
   auth,
   validate({ body: deleteAccountSchema }),
   deleteAccountController,
+);
+
+userRouter.patch(
+  ROUTES.USER.EXPERIENCE_ITEM,
+  auth,
+  changeRole([ROLE.USER]),
+  validate({ body: updateExperienceSchema, params: objectIdParamSchema }),
+  updateExperienceController,
+);
+
+userRouter.patch(
+  ROUTES.USER.EDUCATION_ITEM,
+  auth,
+  changeRole([ROLE.USER]),
+  validate({ body: updateEducationSchema, params: objectIdParamSchema }),
+  updateEducationController,
 );

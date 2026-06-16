@@ -14,6 +14,19 @@ export const experienceSchema = z.strictObject({
   description: z.string().max(1000).nullish(),
 });
 
+export const updateExperienceSchema = z
+  .strictObject({
+    title: z.string().min(1).max(100).optional(),
+    company: z.string().min(1).max(100).optional(),
+    startDate: z.coerce.date().optional(),
+    endDate: z.coerce.date().nullish(),
+    current: z.boolean().optional(),
+    description: z.string().max(1000).nullish(),
+  })
+  .refine((doc) => Object.keys(doc).length > 0, {
+    message: "At least one field should be provided",
+  });
+
 export const educationSchema = z.strictObject({
   level: z.enum(EDUCATION_LEVEL),
   institution: z.string().min(1).max(150),
@@ -21,6 +34,18 @@ export const educationSchema = z.strictObject({
   from: z.coerce.date(),
   to: z.coerce.date(),
 });
+
+export const updateEducationSchema = z
+  .strictObject({
+    level: z.enum(EDUCATION_LEVEL).optional(),
+    institution: z.string().min(1).max(150).optional(),
+    field: z.string().min(1).max(150).optional(),
+    from: z.coerce.date().optional(),
+    to: z.coerce.date().optional(),
+  })
+  .refine((doc) => Object.keys(doc).length > 0, {
+    message: "At least one field should be provided",
+  });
 
 export const updateProfileSchema = z
   .strictObject({
@@ -63,3 +88,5 @@ export type updateProfileDTO = z.infer<typeof updateProfileSchema>;
 export type experienceDTO = z.infer<typeof experienceSchema>;
 export type educationDTO = z.infer<typeof educationSchema>;
 export type objectIdParamDTO = z.infer<typeof objectIdParamSchema>;
+export type updateExperienceDTO = z.infer<typeof updateExperienceSchema>;
+export type updateEducationceDTO = z.infer<typeof updateEducationSchema>;

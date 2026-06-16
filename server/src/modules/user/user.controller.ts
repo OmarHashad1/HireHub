@@ -16,6 +16,8 @@ import {
   removeExperience,
   sendChangeEmailOTP,
   sendDeleteAccountOTP,
+  updateEducation,
+  updateExperience,
   updateProfile,
 } from "./user.service.js";
 import { errorRes, successRes } from "../../utils/response.util.js";
@@ -31,8 +33,11 @@ import {
   educationDTO,
   experienceDTO,
   sendChangeEmailOtpDTO,
+  updateEducationceDTO,
+  updateExperienceDTO,
   updateProfileDTO,
 } from "../../schemas/user.schema.js";
+import { Types } from "mongoose";
 
 export const logoutController = async (
   req: Request,
@@ -320,6 +325,47 @@ export const deleteAccountController = async (
     successRes({
       res,
       message: "Account deleted successfully",
+      status: StatusCodes.OK,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateExperienceController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    await updateExperience(
+      req.user as IUser,
+      req.params.id as string as unknown as Types.ObjectId,
+      req.body as updateExperienceDTO,
+    );
+    successRes({
+      res,
+      message: "Experience updated successfully",
+      status: StatusCodes.OK,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+export const updateEducationController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    await updateEducation(
+      req.user as IUser,
+      req.params.id as string as unknown as Types.ObjectId,
+      req.body as updateEducationceDTO,
+    );
+    successRes({
+      res,
+      message: "Education updated successfully",
       status: StatusCodes.OK,
     });
   } catch (err) {
