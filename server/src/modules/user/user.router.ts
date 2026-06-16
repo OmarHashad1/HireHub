@@ -21,7 +21,7 @@ import {
   updateProfileController,
 } from "./user.controller.js";
 import { auth } from "../../middlewares/auth.middleware.js";
-import { changeRole } from "../../middlewares/checkRole.middleware.js";
+import { checkRole } from "../../middlewares/checkRole.middleware.js";
 import { ROLE } from "../../enums/user.enums.js";
 import { uploadAvatar, uploadCV } from "../../utils/multer.utils.js";
 import { mutlerFileSchema } from "../../schemas/global.schema.js";
@@ -64,7 +64,7 @@ userRouter.delete(ROUTES.USER.DELETE_AVATAR, auth, deleteAvatarController);
 userRouter.patch(
   ROUTES.USER.UPDATE_PROFILE,
   auth,
-  changeRole([ROLE.USER]),
+  checkRole([ROLE.USER]),
   validate({ body: updateProfileSchema }),
   updateProfileController,
 );
@@ -72,7 +72,7 @@ userRouter.patch(
 userRouter.post(
   ROUTES.USER.EXPERIENCE,
   auth,
-  changeRole([ROLE.USER]),
+  checkRole([ROLE.USER]),
   validate({ body: experienceSchema }),
   addExperienceController,
 );
@@ -80,7 +80,7 @@ userRouter.post(
 userRouter.delete(
   ROUTES.USER.EXPERIENCE_ITEM,
   auth,
-  changeRole([ROLE.USER]),
+  checkRole([ROLE.USER]),
   validate({ params: objectIdParamSchema }),
   removeExperienceController,
 );
@@ -88,7 +88,7 @@ userRouter.delete(
 userRouter.post(
   ROUTES.USER.EDUCATION,
   auth,
-  changeRole([ROLE.USER]),
+  checkRole([ROLE.USER]),
   validate({ body: educationSchema }),
   addEducationController,
 );
@@ -96,7 +96,7 @@ userRouter.post(
 userRouter.delete(
   ROUTES.USER.EDUCATION_ITEM,
   auth,
-  changeRole([ROLE.USER]),
+  checkRole([ROLE.USER]),
   validate({ params: objectIdParamSchema }),
   removeEducationController,
 );
@@ -118,7 +118,7 @@ userRouter.patch(
 userRouter.patch(
   ROUTES.USER.CHANGE_CV,
   auth,
-  changeRole([ROLE.USER]),
+  checkRole([ROLE.USER]),
   uploadCV.single("cv"),
   validate({ file: mutlerFileSchema }),
   changeCvController,
@@ -127,7 +127,7 @@ userRouter.patch(
 userRouter.delete(
   ROUTES.USER.DELETE_CV,
   auth,
-  changeRole([ROLE.USER]),
+  checkRole([ROLE.USER]),
   deleteCvController,
 );
 
@@ -147,7 +147,7 @@ userRouter.delete(
 userRouter.patch(
   ROUTES.USER.EXPERIENCE_ITEM,
   auth,
-  changeRole([ROLE.USER]),
+  checkRole([ROLE.USER]),
   validate({ body: updateExperienceSchema, params: objectIdParamSchema }),
   updateExperienceController,
 );
@@ -155,7 +155,7 @@ userRouter.patch(
 userRouter.patch(
   ROUTES.USER.EDUCATION_ITEM,
   auth,
-  changeRole([ROLE.USER]),
+  checkRole([ROLE.USER]),
   validate({ body: updateEducationSchema, params: objectIdParamSchema }),
   updateEducationController,
 );
