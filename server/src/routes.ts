@@ -31,10 +31,13 @@ export const ROUTES = {
     DELETE_CV: "/delete-cv",
     SEND_DELETE_ACCOUNT_OTP: "/delete-account/send-otp",
     DELETE_ACCOUNT: "/delete-account",
-    
   },
-  company: {
+  COMPANY: {
     BASE: "/company",
     COMPANY_APLLICATION: "/company-application",
+  },
+  application: {
+    BASE:"/applcation",
+    
   },
 } as const;
