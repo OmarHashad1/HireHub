@@ -59,6 +59,5 @@ export interface IUser extends Document {
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;
-  restoredAt: Date | null;
   fullName: string;
 }

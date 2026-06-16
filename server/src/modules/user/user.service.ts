@@ -25,6 +25,8 @@ import {
 import { generateOTP } from "../../utils/generateOTP.util.js";
 import * as argon2 from "argon2";
 import { sendMail } from "../../utils/smtp.util.js";
+import { activityLogger } from "../../utils/logger.util.js";
+import { LOG_ACTION, LOG_TARGET_TYPE } from "../../enums/log.enums.js";
 import { Types, UpdateQuery } from "mongoose";
 const userRepo = new UserRepo();
 
@@ -68,6 +70,16 @@ export const logout = async ({
       throw new Error("Invalid Logout Type");
     }
   }
+
+  activityLogger.info({
+    event: "user.logout",
+    actor: user._id,
+    email: user.email,
+    logoutType: type,
+    action: LOG_ACTION.LOGOUT,
+    targetType: LOG_TARGET_TYPE.USER,
+    targetId: user._id,
+  });
 };
 
 export const changeAvatar = async ({
@@ -94,6 +106,15 @@ export const changeAvatar = async ({
       avatar: bucketKey,
     },
   });
+
+  activityLogger.info({
+    event: "user.avatar.changed",
+    actor: user._id,
+    email: user.email,
+    action: LOG_ACTION.CHANGE_AVATAR,
+    targetType: LOG_TARGET_TYPE.USER,
+    targetId: user._id,
+  });
 };
 
 export const deleteAvatar = async (user: IUser) => {
@@ -104,6 +125,15 @@ export const deleteAvatar = async (user: IUser) => {
   await userRepo.updateOne({
     filter: { _id: user._id },
     update: { $unset: { avatar: 1 } },
+  });
+
+  activityLogger.info({
+    event: "user.avatar.deleted",
+    actor: user._id,
+    email: user.email,
+    action: LOG_ACTION.DELETE_AVATAR,
+    targetType: LOG_TARGET_TYPE.USER,
+    targetId: user._id,
   });
 };
 
@@ -182,17 +212,40 @@ export const updateProfile = async (
     update.age = calculateAge(DOB);
   }
 
-  return await userRepo.updateOne({
+  const result = await userRepo.updateOne({
     filter: { _id: user._id },
     update,
   });
+
+  activityLogger.info({
+    event: "user.profile.updated",
+    actor: user._id,
+    email: user.email,
+    fields: Object.keys(updateSchema),
+    action: LOG_ACTION.UPDATE_PROFILE,
+    targetType: LOG_TARGET_TYPE.USER,
+    targetId: user._id,
+  });
+
+  return result;
 };
 
 export const addExperience = async (user: IUser, experience: experienceDTO) => {
-  return await userRepo.updateOne({
+  const result = await userRepo.updateOne({
     filter: { _id: user._id },
     update: { $push: { experience } },
   });
+
+  activityLogger.info({
+    event: "user.experience.added",
+    actor: user._id,
+    email: user.email,
+    action: LOG_ACTION.ADD_EXPERIENCE,
+    targetType: LOG_TARGET_TYPE.USER,
+    targetId: user._id,
+  });
+
+  return result;
 };
 
 export const removeExperience = async (user: IUser, experienceId: string) => {
@@ -202,14 +255,36 @@ export const removeExperience = async (user: IUser, experienceId: string) => {
   });
   if (result.matchedCount === 0)
     throw new NotFoundException("Experience not found");
+
+  activityLogger.info({
+    event: "user.experience.removed",
+    actor: user._id,
+    email: user.email,
+    experienceId,
+    action: LOG_ACTION.REMOVE_EXPERIENCE,
+    targetType: LOG_TARGET_TYPE.USER,
+    targetId: user._id,
+  });
+
   return result;
 };
 
 export const addEducation = async (user: IUser, education: educationDTO) => {
-  return await userRepo.updateOne({
+  const result = await userRepo.updateOne({
     filter: { _id: user._id },
     update: { $push: { education } },
   });
+
+  activityLogger.info({
+    event: "user.education.added",
+    actor: user._id,
+    email: user.email,
+    action: LOG_ACTION.ADD_EDUCATION,
+    targetType: LOG_TARGET_TYPE.USER,
+    targetId: user._id,
+  });
+
+  return result;
 };
 
 export const removeEducation = async (user: IUser, educationId: string) => {
@@ -219,6 +294,17 @@ export const removeEducation = async (user: IUser, educationId: string) => {
   });
   if (result.matchedCount === 0)
     throw new NotFoundException("Education not found");
+
+  activityLogger.info({
+    event: "user.education.removed",
+    actor: user._id,
+    email: user.email,
+    educationId,
+    action: LOG_ACTION.REMOVE_EDUCATION,
+    targetType: LOG_TARGET_TYPE.USER,
+    targetId: user._id,
+  });
+
   return result;
 };
 
@@ -270,6 +356,16 @@ export const sendChangeEmailOTP = async (
   });
 
   await sendMail({ to: user.email, subject: "Change Email", html: otp });
+
+  activityLogger.info({
+    event: "user.change-email.otp-sent",
+    actor: user._id,
+    email: user.email,
+    newEmail: email,
+    action: LOG_ACTION.SEND_CHANGE_EMAIL_OTP,
+    targetType: LOG_TARGET_TYPE.USER,
+    targetId: user._id,
+  });
 };
 
 export const changeEmail = async (
@@ -341,6 +437,16 @@ export const changeEmail = async (
   });
 
   await redisService.del(otpKey);
+
+  activityLogger.info({
+    event: "user.email.changed",
+    actor: userId,
+    email,
+    previousEmail: user.email,
+    action: LOG_ACTION.CHANGE_EMAIL,
+    targetType: LOG_TARGET_TYPE.USER,
+    targetId: userId,
+  });
 };
 
 export const changeCv = async (user: IUser, file: Express.Multer.File) => {
@@ -352,7 +458,7 @@ export const changeCv = async (user: IUser, file: Express.Multer.File) => {
     file,
     storageStrategy: multerStorageType.DESK,
   });
-  return await userRepo.updateOne({
+  const result = await userRepo.updateOne({
     filter: {
       _id: user._id,
     },
@@ -360,6 +466,17 @@ export const changeCv = async (user: IUser, file: Express.Multer.File) => {
       cv: bucketKey,
     },
   });
+
+  activityLogger.info({
+    event: "user.cv.changed",
+    actor: user._id,
+    email: user.email,
+    action: LOG_ACTION.CHANGE_CV,
+    targetType: LOG_TARGET_TYPE.USER,
+    targetId: user._id,
+  });
+
+  return result;
 };
 
 export const deleteCv = async (user: IUser) => {
@@ -370,6 +487,15 @@ export const deleteCv = async (user: IUser) => {
   await userRepo.updateOne({
     filter: { _id: user._id },
     update: { $unset: { cv: 1 } },
+  });
+
+  activityLogger.info({
+    event: "user.cv.deleted",
+    actor: user._id,
+    email: user.email,
+    action: LOG_ACTION.DELETE_CV,
+    targetType: LOG_TARGET_TYPE.USER,
+    targetId: user._id,
   });
 };
 
@@ -404,6 +530,15 @@ export const sendDeleteAccountOTP = async (user: IUser) => {
   });
 
   await sendMail({ to: user.email, subject: "Delete Account", html: otp });
+
+  activityLogger.info({
+    event: "user.delete-account.otp-sent",
+    actor: user._id,
+    email: user.email,
+    action: LOG_ACTION.SEND_DELETE_ACCOUNT_OTP,
+    targetType: LOG_TARGET_TYPE.USER,
+    targetId: user._id,
+  });
 };
 
 export const deleteAccount = async (
@@ -464,4 +599,13 @@ export const deleteAccount = async (
     redisService.del(otpKey),
     redisService.removeFCMUser(userId),
   ]);
+
+  activityLogger.info({
+    event: "user.account.deleted",
+    actor: userId,
+    email: user.email,
+    action: LOG_ACTION.DELETE_ACCOUNT,
+    targetType: LOG_TARGET_TYPE.USER,
+    targetId: userId,
+  });
 };

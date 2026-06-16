@@ -36,6 +36,7 @@ export const app = async () => {
     await redisService.connect();
 
     configPassport();
+    serverLogger.info("Core services initialized (DB, SMTP, Redis, Passport)");
   } catch (error) {
     serverLogger.error({ err: error }, "Startup failed");
     process.exit(1);
@@ -52,5 +53,12 @@ export const app = async () => {
 
   APP.use(globalErrorHandler);
 
-  APP.listen(PORT);
+  const server = APP.listen(PORT, () => {
+    serverLogger.info(`Server is running on port ${PORT}`);
+  });
+
+  server.on("error", (err) => {
+    serverLogger.error({ err }, "Failed to start HTTP server");
+    process.exit(1);
+  });
 };
