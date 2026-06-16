@@ -41,5 +41,7 @@ export const ROUTES = {
   },
   JOB: {
     BASE: "/job",
+    JOB_ITEM: "/job/:id",
+    JOB: "/jobs",
   },
 } as const;
