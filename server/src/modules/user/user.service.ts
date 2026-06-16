@@ -20,6 +20,8 @@ import {
   educationDTO,
   experienceDTO,
   sendChangeEmailOtpDTO,
+  updateEducationceDTO,
+  updateExperienceDTO,
   updateProfileDTO,
 } from "../../schemas/user.schema.js";
 import { generateOTP } from "../../utils/generateOTP.util.js";
@@ -27,7 +29,7 @@ import * as argon2 from "argon2";
 import { sendMail } from "../../utils/smtp.util.js";
 import { activityLogger } from "../../utils/logger.util.js";
 import { LOG_ACTION, LOG_TARGET_TYPE } from "../../enums/log.enums.js";
-import { Types, UpdateQuery } from "mongoose";
+import { FlattenMaps, HydratedDocument, Types, UpdateQuery } from "mongoose";
 const userRepo = new UserRepo();
 
 export const logout = async ({
@@ -541,10 +543,7 @@ export const sendDeleteAccountOTP = async (user: IUser) => {
   });
 };
 
-export const deleteAccount = async (
-  user: IUser,
-  { otp }: deleteAccountDTO,
-) => {
+export const deleteAccount = async (user: IUser, { otp }: deleteAccountDTO) => {
   const userId = user._id as Types.ObjectId;
   const otpKey = redisService.otpKey({ userId, subject: "delete-account" });
   const blockKey = redisService.otpKeyBlock({
@@ -607,5 +606,81 @@ export const deleteAccount = async (
     action: LOG_ACTION.DELETE_ACCOUNT,
     targetType: LOG_TARGET_TYPE.USER,
     targetId: userId,
+  });
+};
+
+export const updateExperience = async (
+  user: IUser,
+  experienctId: Types.ObjectId,
+  experienceDTO: updateExperienceDTO,
+) => {
+  const doc: HydratedDocument<IUser> | FlattenMaps<IUser> | null =
+    await userRepo.findOne({
+      filter: {
+        experience: {
+          $elemMatch: {
+            _id: experienctId as unknown as Types.ObjectId,
+          },
+        },
+        deletedAt: { $exists: false },
+        _id: user._id,
+      },
+      projection: { experience: 1 },
+      options: { lean: true },
+    });
+  if (!doc) throw new NotFoundException("Experience not found");
+  const experience = doc.experience.filter((exp) => exp._id == experienctId)[0];
+  const updateExperience = { ...experience, ...experienceDTO };
+
+  return await userRepo.updateOne({
+    filter: {
+      _id: user._id,
+      experience: {
+        $elemMatch: {
+          _id: experienctId as unknown as Types.ObjectId,
+        },
+      },
+    },
+    update: {
+      $set: { "experience.$": updateExperience },
+    },
+  });
+};
+
+export const updateEducation = async (
+  user: IUser,
+  educationId: Types.ObjectId,
+  educationDTO: updateEducationceDTO,
+) => {
+  const doc: HydratedDocument<IUser> | FlattenMaps<IUser> | null =
+    await userRepo.findOne({
+      filter: {
+        education: {
+          $elemMatch: {
+            _id: educationId as unknown as Types.ObjectId,
+          },
+        },
+        deletedAt: { $exists: false },
+        _id: user._id,
+      },
+      projection: { education: 1 },
+      options: { lean: true },
+    });
+  if (!doc) throw new NotFoundException("education not found");
+  const education = doc.education.filter((edu) => edu._id == educationId)[0];
+  const updateEducation = { ...education, ...educationDTO };
+console.log(updateEducation)
+  return await userRepo.updateOne({
+    filter: {
+      _id: user._id,
+      education: {
+        $elemMatch: {
+          _id: educationId as unknown as Types.ObjectId,
+        },
+      },
+    },
+    update: {
+      $set: { "education.$": updateEducation },
+    },
   });
 };
