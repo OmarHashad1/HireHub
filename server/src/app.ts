@@ -19,6 +19,7 @@ import { userRouter } from "./modules/user/user.router.js";
 import { companyRouter } from "./modules/company/company.router.js";
 import { requestFileMiddleware } from "./middlewares/requestFile.middleware.js";
 import { auth } from "./middlewares/auth.middleware.js";
+import { jobRouter } from "./modules/job/jobs.router.js";
 
 export const app = async () => {
   const APP: Express = express();
@@ -45,8 +46,8 @@ export const app = async () => {
   APP.use("/uploads/*path", auth, requestFileMiddleware);
   APP.use(ROUTES.USER.BASE, userRouter);
   APP.use(ROUTES.AUTH.BASE, authRouter);
-  APP.use(ROUTES.company.BASE, companyRouter);
-
+  APP.use(ROUTES.COMPANY.BASE, companyRouter);
+  APP.use(ROUTES.JOB.BASE, jobRouter);
   APP.all("/{*dummy}", (_req: Request, _res: Response, next: NextFunction) => {
     next(new NotFoundException());
   });

@@ -36,8 +36,10 @@ export const ROUTES = {
     BASE: "/company",
     COMPANY_APLLICATION: "/company-application",
   },
-  application: {
-    BASE:"/applcation",
-    
+  APPLICATION: {
+    BASE: "/applcation",
+  },
+  JOB: {
+    BASE: "/job",
   },
 } as const;
