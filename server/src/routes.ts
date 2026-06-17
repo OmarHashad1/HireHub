@@ -34,7 +34,8 @@ export const ROUTES = {
   },
   COMPANY: {
     BASE: "/company",
-    COMPANY_APLLICATION: "/company-application",
+    COMPANY_APPLLICATION: "/company-application",
+    COMPANY_PROFILE:"/profile"
   },
   APPLICATION: {
     BASE: "/applcation",

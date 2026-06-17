@@ -3,15 +3,26 @@ import { ROUTES } from "../../routes.js";
 import {
   companyApplicationSchema,
   companyApplicationFileFieldsSchema,
+  updateCompanyProfileSchema,
+  updateCompanyApplicationStatusSchema,
 } from "../../schemas/company.schema.js";
 import { validate } from "../../middlewares/validate.middleware.js";
-import { companyApplicationController } from "./company.controller.js";
+import {
+  companyApplicationController,
+  companyProfileController,
+  updateCompanyApplicationStatusController,
+  updateCompanyProfileController,
+} from "./company.controller.js";
 import { uploadApplicationDoc } from "../../utils/multer.utils.js";
+import { auth } from "../../middlewares/auth.middleware.js";
+import { checkRole } from "../../middlewares/checkRole.middleware.js";
+import { ROLE } from "../../enums/user.enums.js";
 
 export const companyRouter: Router = Router();
 
 companyRouter.post(
-  ROUTES.COMPANY.COMPANY_APLLICATION,
+  ROUTES.COMPANY.COMPANY_APPLLICATION,
+  auth,
   uploadApplicationDoc.fields([
     { name: "taxCard", maxCount: 1 },
     { name: "commercialRegistration", maxCount: 1 },
@@ -21,4 +32,27 @@ companyRouter.post(
     files: companyApplicationFileFieldsSchema,
   }),
   companyApplicationController,
+);
+
+companyRouter.get(
+  ROUTES.COMPANY.COMPANY_PROFILE,
+  auth,
+  checkRole([ROLE.COMPANY]),
+  companyProfileController,
+);
+
+companyRouter.patch(
+  ROUTES.COMPANY.COMPANY_PROFILE,
+  auth,
+  checkRole([ROLE.COMPANY]),
+  validate({ body: updateCompanyProfileSchema }),
+  updateCompanyProfileController,
+);
+
+companyRouter.patch(
+  ROUTES.COMPANY.COMPANY_APPLLICATION,
+  auth,
+  checkRole([ROLE.ADMIN]),
+  validate({ body: updateCompanyApplicationStatusSchema }),
+  updateCompanyApplicationStatusController,
 );

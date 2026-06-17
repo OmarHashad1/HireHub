@@ -34,9 +34,7 @@ export const userSchema = new Schema<IUser>(
     },
     DOB: {
       type: Date,
-      required: function (this: IUser) {
-        return this.provider === PROVIDER.SYSTEM;
-      },
+      defualy: null,
     },
     age: {
       type: Number,

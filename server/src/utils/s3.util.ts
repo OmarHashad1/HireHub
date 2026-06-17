@@ -105,3 +105,11 @@ export const deleteAsset = async ({
   const command = new DeleteObjectCommand({ Bucket, Key });
   return await client.send(command);
 };
+
+export const deleteAssets = async (Keys: string[]) => {
+  await Promise.all(
+    Keys.map((Key) => {
+      deleteAsset({ Key });
+    }),
+  );
+};

@@ -669,7 +669,6 @@ export const updateEducation = async (
   if (!doc) throw new NotFoundException("education not found");
   const education = doc.education.filter((edu) => edu._id == educationId)[0];
   const updateEducation = { ...education, ...educationDTO };
-console.log(updateEducation)
   return await userRepo.updateOne({
     filter: {
       _id: user._id,
