@@ -1,8 +1,18 @@
 import { NextFunction, Request, Response } from "express";
-import { companyApplication } from "./company.service.js";
+import {
+  companyApplication,
+  companyProfile,
+  updateCompanyApplicationStatus,
+  updateCompanyProfile,
+} from "./company.service.js";
 import { successRes } from "../../utils/response.util.js";
 import { StatusCodes } from "http-status-codes";
 import { ICompanyApplication } from "../../types/companyApplication.types.js";
+import { IUser } from "../../types/user.types.js";
+import {
+  updateCompanyApplicationStatusDTO,
+  updateCompanyProfileDTO,
+} from "../../schemas/company.schema.js";
 
 export const companyApplicationController = async (
   req: Request,
@@ -11,6 +21,7 @@ export const companyApplicationController = async (
 ) => {
   try {
     const payload = await companyApplication(
+      req.user as IUser,
       req.body as ICompanyApplication,
       req.files as Record<string, Express.Multer.File[]>,
     );
@@ -23,10 +34,64 @@ export const companyApplicationController = async (
       },
     });
   } catch (err: any) {
-    if (err?.code == "11000") {
-      err.statusCode = StatusCodes.CONFLICT;
-      err.message = "Email already registerd";
-    }
+    next(err);
+  }
+};
+
+export const companyProfileController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const payload = await companyProfile(req.user as IUser);
+    successRes({
+      res,
+      message: "Company Profile Fetched Successfully",
+      status: StatusCodes.OK,
+      data: payload,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateCompanyProfileController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    await updateCompanyProfile(
+      req.user as IUser,
+      req.body as updateCompanyProfileDTO,
+    );
+    successRes({
+      res,
+      message: "Company profile updated successfully",
+      status: StatusCodes.OK,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateCompanyApplicationStatusController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    await updateCompanyApplicationStatus(
+      req.user as IUser,
+      req.body as updateCompanyApplicationStatusDTO,
+    );
+    successRes({
+      res,
+      message: "Application status updated successfully",
+      status: StatusCodes.OK,
+    });
+  } catch (err) {
     next(err);
   }
 };

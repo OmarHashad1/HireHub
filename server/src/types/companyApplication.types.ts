@@ -16,9 +16,10 @@ export interface ICompanyApplicationDocuments {
 }
 
 export interface ICompanyApplication extends Document {
+  submittedBy: Types.ObjectId;
   companyName: string;
   companyEmail: string;
-  phone: string;
+  contactPhone: string;
   website?: string | null;
   industry: INDUSTRY;
   linkedin?: string | null;
@@ -26,6 +27,7 @@ export interface ICompanyApplication extends Document {
   location: ICompanyApplicationLocation;
   description: string;
   documents: ICompanyApplicationDocuments;
+  foundedAt?: Date | null;
   status: COMPANY_APPLICATION_STATUS;
   rejectionReason?: string | null;
   reviewedBy?: Types.ObjectId | null;

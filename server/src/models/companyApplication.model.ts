@@ -1,4 +1,4 @@
-import { HydratedDocument, Schema, model } from "mongoose";
+import { HydratedDocument, Schema, Types, model } from "mongoose";
 import {
   COMPANY_APPLICATION_STATUS,
   INDUSTRY,
@@ -10,6 +10,11 @@ import { decrypt } from "../utils/encryption.util.js";
 
 const companyApplicationSchema = new Schema<ICompanyApplication>(
   {
+    submittedBy: {
+      type: Types.ObjectId,
+      ref:"User",
+      required:true,
+    },
     companyName: {
       type: String,
       required: true,
@@ -22,7 +27,7 @@ const companyApplicationSchema = new Schema<ICompanyApplication>(
       unique: true,
       index: true,
     },
-    phone: {
+    contactPhone: {
       type: String,
       required: true,
     },
@@ -62,6 +67,10 @@ const companyApplicationSchema = new Schema<ICompanyApplication>(
     },
     linkedin: {
       type: String,
+      default: null,
+    },
+    foundedAt: {
+      type: Date,
       default: null,
     },
     status: {
@@ -128,14 +137,12 @@ companyApplicationSchema.post(
     if (this.op == "find") {
       (docs as HydratedDocument<ICompanyApplication>[]).map(
         (doc: ICompanyApplication) => {
-          if (doc.phone) doc.phone = decrypt(doc.phone as string);
+          if (doc.contactPhone) doc.contactPhone = decrypt(doc.contactPhone as string);
         },
       );
     } else {
       const doc = docs as HydratedDocument<ICompanyApplication> | null;
-      if (doc && doc.phone) {
-        doc.phone = decrypt(doc?.phone as string);
-      }
+      if (doc && doc.contactPhone) doc.contactPhone = decrypt(doc.contactPhone as string);
     }
   },
 );

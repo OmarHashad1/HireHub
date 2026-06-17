@@ -24,7 +24,6 @@ export interface ICompany extends Document {
   companyApplication: Types.ObjectId;
   name: string;
   email: string;
-  phone: string;
   industry: INDUSTRY;
   size: COMPANY_SIZE;
   location: ICompanyLocation;
