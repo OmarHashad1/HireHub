@@ -6,14 +6,14 @@ import {
 } from "../enums/companyApplication.enums.js";
 import { ICompanyApplication } from "../types/companyApplication.types.js";
 import { sendMail } from "../utils/smtp.util.js";
-import { decrypt } from "../utils/encryption.util.js";
+import { decrypt, encrypt } from "../utils/encryption.util.js";
 
 const companyApplicationSchema = new Schema<ICompanyApplication>(
   {
     submittedBy: {
       type: Types.ObjectId,
-      ref:"User",
-      required:true,
+      ref: "User",
+      required: true,
     },
     companyName: {
       type: String,
@@ -137,15 +137,29 @@ companyApplicationSchema.post(
     if (this.op == "find") {
       (docs as HydratedDocument<ICompanyApplication>[]).map(
         (doc: ICompanyApplication) => {
-          if (doc.contactPhone) doc.contactPhone = decrypt(doc.contactPhone as string);
+          if (doc.contactPhone)
+            doc.contactPhone = decrypt(doc.contactPhone as string);
         },
       );
     } else {
       const doc = docs as HydratedDocument<ICompanyApplication> | null;
-      if (doc && doc.contactPhone) doc.contactPhone = decrypt(doc.contactPhone as string);
+      if (doc && doc.contactPhone)
+        doc.contactPhone = decrypt(doc.contactPhone as string);
     }
   },
 );
+
+companyApplicationSchema.pre(
+  ["updateOne"],
+  { document: false, query: true },
+  function () {
+    const update = this.getQuery();
+    if (update.contactPhone) {
+      update.contactPhone = encrypt(update.contactPhone as string);
+    }
+  },
+);
+
 export const companyApplicationModel = model<ICompanyApplication>(
   "CompanyApplication",
   companyApplicationSchema,

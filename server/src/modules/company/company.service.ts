@@ -4,6 +4,7 @@ import { CompanyApplicationRepo } from "../../repositories/companyApplication.re
 import { ICompanyApplication } from "../../types/companyApplication.types.js";
 import { encrypt } from "../../utils/encryption.util.js";
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenExceptions,
   InternalServerErrorException,
@@ -176,6 +177,15 @@ export const updateCompanyApplicationStatus = async (
     options: { lean: false },
   });
   if (!application) throw new NotFoundException("Application not found");
+
+  if (
+    application.status == COMPANY_APPLICATION_STATUS.APPROVED ||
+    application.status == COMPANY_APPLICATION_STATUS.REJECTED
+  )
+    throw new BadRequestException(
+      "Company Application stauts can not modified after approval or rejection",
+    );
+
   const submitter = await userRepo.findOne({
     filter: { _id: application.submittedBy },
     options: { lean: true },
@@ -185,13 +195,19 @@ export const updateCompanyApplicationStatus = async (
     throw new NotFoundException("Submitter account no longer exists");
   }
   if (dto.status === COMPANY_APPLICATION_STATUS.REJECTED) {
-    application.status = COMPANY_APPLICATION_STATUS.REJECTED;
-    application.rejectionReason = dto.rerejectionReason as string;
-    await application.save();
+    await applicationRepo.updateOne({
+      filter: { _id: application._id },
+      update: {
+        status: COMPANY_APPLICATION_STATUS.REJECTED,
+        rejectionReason: dto.rerejectionReason,
+        reviewedBy: admin._id,
+        reviewedAt: new Date(),
+      },
+    });
     return await sendMail({
       to: application.companyEmail,
       subject: "Application Status update",
-      html: `<h1>Application Status: ${dto.status}<h1>`,
+      html: `<h1>Application Status: ${dto.status}<h1> <p>${dto.rerejectionReason}<p>`,
     });
   } else {
     const tempPassword = generatePassword();

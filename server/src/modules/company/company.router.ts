@@ -23,6 +23,7 @@ export const companyRouter: Router = Router();
 companyRouter.post(
   ROUTES.COMPANY.COMPANY_APPLLICATION,
   auth,
+  checkRole([ROLE.USER]),
   uploadApplicationDoc.fields([
     { name: "taxCard", maxCount: 1 },
     { name: "commercialRegistration", maxCount: 1 },
