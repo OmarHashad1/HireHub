@@ -37,7 +37,10 @@ export const companyApplicationSchema = z.strictObject({
   description: z.string().min(10).max(100),
 
   linkedin: z.url().optional(),
-  foundedAt: z.coerce.date().max(new Date(), { error: "Founded date cannot be in the future" }).optional(),
+  foundedAt: z.coerce
+    .date()
+    .max(new Date(), { error: "Founded date cannot be in the future" })
+    .optional(),
 });
 
 export const companyApplicationFileFieldsSchema = z.strictObject({
@@ -97,6 +100,11 @@ export const updateCompanyApplicationStatusSchema = z
     },
   );
 
+export const getCompanyJobsSchema = z.strictObject({
+  companyId: z.string().regex(/^[0-9a-fA-F]{24}$/, { error: "Invalid id" }),
+});
+
+export type getCompanyJobsDTO = z.infer<typeof getCompanyJobsSchema>;
 export type updateCompanyApplicationStatusDTO = z.infer<
   typeof updateCompanyApplicationStatusSchema
 >;

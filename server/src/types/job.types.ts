@@ -7,9 +7,9 @@ import {
 } from "../enums/job.enums.js";
 
 export interface IJobLocation {
+  isRemote: boolean;
   city?: string | null;
   country?: string | null;
-  isRemote: boolean;
 }
 
 export interface IJobSalary {
@@ -20,7 +20,6 @@ export interface IJobSalary {
 
 export interface IJob extends Document {
   company: Types.ObjectId;
-  postedBy: Types.ObjectId;
   title: string;
   description: string;
   requirements: string[];

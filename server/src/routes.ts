@@ -35,14 +35,16 @@ export const ROUTES = {
   COMPANY: {
     BASE: "/company",
     COMPANY_APPLLICATION: "/application",
-    COMPANY_PROFILE:"/profile"
+    COMPANY_PROFILE: "/profile",
+    COMPANY_JOBS: "/:companyId/jobs",
   },
   APPLICATION: {
     BASE: "/applcation",
   },
   JOB: {
     BASE: "/job",
-    JOB_ITEM: "/job/:id",
-    JOB: "/jobs",
+    JOB_ITEM: "/:id",
+    JOBS: "/jobs",
+    COMPANY_JOBS: "/company/:companyId/jobs",
   },
 } as const;

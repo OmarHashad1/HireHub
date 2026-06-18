@@ -3,6 +3,7 @@ export enum JOB_STATUS {
   PUBLISHED = "published",
   CLOSED = "closed",
   EXPIRED = "expired",
+  SUSPENDED="suspended"
 }
 
 export enum JOB_TYPE {
@@ -13,6 +14,7 @@ export enum JOB_TYPE {
 }
 
 export enum EXPERIENCE_LEVEL {
+  FRESH = "fresh",
   JUNIOR = "junior",
   MID = "mid",
   SENIOR = "senior",

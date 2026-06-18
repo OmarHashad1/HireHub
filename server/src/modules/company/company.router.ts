@@ -5,11 +5,13 @@ import {
   companyApplicationFileFieldsSchema,
   updateCompanyProfileSchema,
   updateCompanyApplicationStatusSchema,
+  getCompanyJobsSchema,
 } from "../../schemas/company.schema.js";
 import { validate } from "../../middlewares/validate.middleware.js";
 import {
   companyApplicationController,
   companyProfileController,
+  getCompanyJobsController,
   updateCompanyApplicationStatusController,
   updateCompanyProfileController,
 } from "./company.controller.js";
@@ -56,4 +58,12 @@ companyRouter.patch(
   checkRole([ROLE.ADMIN]),
   validate({ body: updateCompanyApplicationStatusSchema }),
   updateCompanyApplicationStatusController,
+);
+
+companyRouter.get(
+  ROUTES.COMPANY.COMPANY_JOBS,
+  auth,
+  checkRole([ROLE.ADMIN, ROLE.COMPANY]),
+  validate({ params: getCompanyJobsSchema }),
+  getCompanyJobsController,
 );

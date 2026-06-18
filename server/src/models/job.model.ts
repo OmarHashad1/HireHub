@@ -14,23 +14,18 @@ const jobSchema = new Schema<IJob>(
       ref: "Company",
       required: true,
     },
-    postedBy: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-
     title: {
       type: String,
       required: true,
-      minLength: 3,
-      maxLength: 100,
+      minLength: 4,
+      maxLength: 20,
       index: true,
     },
     description: {
       type: String,
       required: true,
-      maxLength: 5000,
+      minLength: 10,
+      maxLength: 1000,
     },
     requirements: {
       type: [String],
@@ -50,10 +45,18 @@ const jobSchema = new Schema<IJob>(
       required: true,
       enum: [...Object.values(JOB_TYPE)],
     },
+
     location: {
-      city: { type: String, default: null },
-      country: { type: String, default: null },
-      isRemote: { type: Boolean, default: false },
+      isRemote: { type: Boolean, required: true },
+
+      city: {
+        type: String,
+        default: null,
+      },
+      country: {
+        type: String,
+        default: null,
+      },
     },
     salary: {
       min: { type: Number, default: null },

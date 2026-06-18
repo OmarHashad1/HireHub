@@ -15,6 +15,7 @@ import { IUser } from "../../types/user.types.js";
 import { CompanyRepo } from "../../repositories/company.repo.js";
 import { COMPANY_STATUS } from "../../enums/company.enums.js";
 import {
+  getCompanyJobsDTO,
   updateCompanyApplicationStatusDTO,
   updateCompanyProfileDTO,
 } from "../../schemas/company.schema.js";
@@ -22,9 +23,11 @@ import { sendMail } from "../../utils/smtp.util.js";
 import { generatePassword } from "../../utils/generatePasssword.util.js";
 import { UserRepo } from "../../repositories/user.repo.js";
 import { ROLE } from "../../enums/user.enums.js";
+import { JobRepo } from "../../repositories/job.repo.js";
 
 const applicationRepo = new CompanyApplicationRepo();
 const companyRepo = new CompanyRepo();
+const jobRepo = new JobRepo();
 const userRepo = new UserRepo();
 export const companyApplication = async (
   user: IUser,
@@ -256,4 +259,28 @@ export const updateCompanyApplicationStatus = async (
       html: `Your credentials: email: ${application.companyEmail} password: ${tempPassword}`,
     });
   }
+};
+
+export const getCompanyJobs = async (
+  user: IUser,
+  { companyId }: getCompanyJobsDTO,
+) => {
+  const company = await companyRepo.findOne({
+    filter: { _id: companyId },
+    options: { lean: true },
+    projection: { _id: 1, name: 1, status: 1, owner: 1 },
+  });
+
+  if (!company) throw new NotFoundException("Company Not found");
+  if (user.role === ROLE.COMPANY && !company.owner.equals(user._id)) {
+    throw new ForbiddenExceptions(
+      "You are not authorized to access this company jobs",
+    );
+  }
+
+  const payload = await jobRepo.find({
+    filter: { company: company._id },
+    options: { lean: true },
+  });
+  return payload;
 };
