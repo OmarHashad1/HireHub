@@ -47,3 +47,37 @@ export const createJobSchema = z.strictObject({
 });
 
 export type createJobDTO = z.infer<typeof createJobSchema>;
+
+export const updateJobSchema = z
+  .strictObject({
+    title: z.string().min(4).max(20).optional(),
+    description: z.string().min(10).max(1000).optional(),
+    requirements: z.array(z.string()).optional(),
+    skills: z.array(z.string()).optional(),
+    experienceLevel: z.enum([...Object.values(EXPERIENCE_LEVEL)]).optional(),
+    type: z.enum([...Object.values(JOB_TYPE)]).optional(),
+    location: z
+      .strictObject({
+        city: z.string().min(1).nullish(),
+        country: z.string().min(1).nullish(),
+        isRemote: z.boolean().optional(),
+      })
+      .optional(),
+    salary: z
+      .strictObject({
+        min: z.number().nonnegative().nullish(),
+        max: z.number().nonnegative().nullish(),
+        currency: z.enum([...Object.values(CURRENCY)]).optional(),
+      })
+      .refine((s) => s.min == null || s.max == null || s.max >= s.min, {
+        message: "Minimum Salary can't be larger than maximum salary",
+      })
+      .optional(),
+    deadline: z.coerce.date().nullish(),
+    aiThreshold: z.number().min(0).max(100).nullish(),
+  })
+  .refine((d) => Object.keys(d).length > 0, {
+    message: "At least one field must be provided to update",
+  });
+
+export type updateJobDTO = z.infer<typeof updateJobSchema>;

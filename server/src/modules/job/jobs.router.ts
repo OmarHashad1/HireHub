@@ -1,10 +1,14 @@
+import { updateJobSchema } from "./../../schemas/job.schema.js";
 import { Router } from "express";
 import { ROUTES } from "../../routes.js";
 import {
+  closeJobController,
   createJobController,
+  deleteJobController,
   getCompanyPublishedJobsController,
   getPublishedJobController,
   getPublishedJobsController,
+  publishJobController,
   updateJobController,
 } from "./jobs.controller.js";
 import { validate } from "../../middlewares/validate.middleware.js";
@@ -47,9 +51,34 @@ jobRouter.patch(
   auth,
   checkRole([ROLE.COMPANY]),
   validate({
-    params: objectIdParamSchema
-      .extend({ jobId: objectIdParamSchema.shape.id })
-      .omit({ id: true }),
+    body: updateJobSchema,
+    params: objectIdParamSchema,
   }),
   updateJobController,
+);
+
+jobRouter.patch(
+  ROUTES.JOB.JOB_PUBLISH,
+  auth,
+  checkRole([ROLE.COMPANY]),
+  validate({ params: objectIdParamSchema }),
+  publishJobController,
+);
+
+jobRouter.patch(
+  ROUTES.JOB.JOB_CLOSE,
+  auth,
+  checkRole([ROLE.COMPANY]),
+  validate({ params: objectIdParamSchema }),
+  closeJobController,
+);
+
+jobRouter.delete(
+  ROUTES.JOB.JOB_ITEM,
+  auth,
+  checkRole([ROLE.COMPANY]),
+  validate({
+    params: objectIdParamSchema,
+  }),
+  deleteJobController,
 );

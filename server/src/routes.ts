@@ -46,5 +46,7 @@ export const ROUTES = {
     JOB_ITEM: "/:id",
     JOBS: "/jobs",
     COMPANY_JOBS: "/company/:companyId/jobs",
+    JOB_PUBLISH: "/:id/publish",
+    JOB_CLOSE: "/:id/close",
   },
 } as const;
