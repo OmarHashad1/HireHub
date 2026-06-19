@@ -19,7 +19,7 @@ import {
   updateCompanyApplicationStatusDTO,
   updateCompanyProfileDTO,
 } from "../../schemas/company.schema.js";
-import { sendMail } from "../../utils/smtp.util.js";
+import { emailEmitter, EMAIL_EVENTS } from "../../events/email.events.js";
 import { generatePassword } from "../../utils/generatePasssword.util.js";
 import { UserRepo } from "../../repositories/user.repo.js";
 import { ROLE } from "../../enums/user.enums.js";
@@ -207,11 +207,12 @@ export const updateCompanyApplicationStatus = async (
         reviewedAt: new Date(),
       },
     });
-    return await sendMail({
+    emailEmitter.emit(EMAIL_EVENTS.APPLICATION_STATUS_UPDATE, {
       to: application.companyEmail,
-      subject: "Application Status update",
-      html: `<h1>Application Status: ${dto.status}<h1> <p>${dto.rejectionReason}<p>`,
+      status: dto.status,
+      rejectionReason: dto.rejectionReason,
     });
+    return;
   } else {
     const tempPassword = generatePassword();
 
@@ -264,10 +265,10 @@ export const updateCompanyApplicationStatus = async (
     } finally {
       session.endSession();
     }
-    await sendMail({
+    emailEmitter.emit(EMAIL_EVENTS.COMPANY_ACCOUNT_CREATED, {
       to: application.companyEmail,
-      subject: "Your HireHub Company Account",
-      html: `Your credentials: email: ${application.companyEmail} password: ${tempPassword}`,
+      email: application.companyEmail,
+      password: tempPassword,
     });
   }
 };

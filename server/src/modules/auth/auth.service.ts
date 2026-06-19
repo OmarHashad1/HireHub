@@ -29,7 +29,7 @@ import {
 } from "../../utils/token.util.js";
 import { redisService } from "../../DB/RedisService.js";
 import { generateOTP } from "../../utils/generateOTP.util.js";
-import { sendMail } from "../../utils/smtp.util.js";
+import { emailEmitter, EMAIL_EVENTS } from "../../events/email.events.js";
 import { Types } from "mongoose";
 import { LOG_ACTION, LOG_TARGET_TYPE } from "../../enums/log.enums.js";
 import { IUser } from "../../types/user.types.js";
@@ -235,11 +235,7 @@ export const sendVerificationEmail = async ({ email }: sendVerifyEmailDTO) => {
     value: { hashedOTP: await argon2.hash(otp), attempts: 1 },
     ttl: 2 * 60,
   });
-  await sendMail({
-    to: email,
-    subject: "Email Verification",
-    html: `<h1>${otp}<h1>`,
-  });
+  emailEmitter.emit(EMAIL_EVENTS.EMAIL_VERIFICATION, { to: email, otp });
 
   activityLogger.info({
     event: "user.verify-email.otp-sent",
@@ -388,11 +384,7 @@ export const sendForgotPasswordOTP = async ({
     value: { hashedOTP: await argon2.hash(otp), attempts: 1 },
     ttl: 2 * 60,
   });
-  await sendMail({
-    to: email,
-    subject: "Forgot Password",
-    html: `<h1>${otp}<h1>`,
-  });
+  emailEmitter.emit(EMAIL_EVENTS.FORGOT_PASSWORD, { to: email, otp });
 
   activityLogger.info({
     event: "user.forgot-password.otp-sent",

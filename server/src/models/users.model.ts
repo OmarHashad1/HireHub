@@ -8,7 +8,7 @@ import {
 import { IUser } from "../types/user.types.js";
 import argon2 from "argon2";
 import { decrypt, encrypt } from "../utils/encryption.util.js";
-import { sendMail } from "../utils/smtp.util.js";
+import { emailEmitter, EMAIL_EVENTS } from "../events/email.events.js";
 import { calculateAge } from "../utils/age.util.js";
 export const userSchema = new Schema<IUser>(
   {
@@ -193,10 +193,9 @@ userSchema.post(
   "save",
   async function (this: HydratedDocument<IUser> & { newDocument: boolean }) {
     if (this.newDocument) {
-      await sendMail({
+      emailEmitter.emit(EMAIL_EVENTS.WELCOME, {
         to: this.email,
-        subject: "Welcome",
-        html: `<h2> Welcome to HireHub ${this.firstName}! </h1>`,
+        firstName: this.firstName,
       });
     }
   },

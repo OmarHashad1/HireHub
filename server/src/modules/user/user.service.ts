@@ -26,7 +26,7 @@ import {
 } from "../../schemas/user.schema.js";
 import { generateOTP } from "../../utils/generateOTP.util.js";
 import * as argon2 from "argon2";
-import { sendMail } from "../../utils/smtp.util.js";
+import { emailEmitter, EMAIL_EVENTS } from "../../events/email.events.js";
 import { activityLogger } from "../../utils/logger.util.js";
 import { LOG_ACTION, LOG_TARGET_TYPE } from "../../enums/log.enums.js";
 import { FlattenMaps, HydratedDocument, Types, UpdateQuery } from "mongoose";
@@ -357,7 +357,7 @@ export const sendChangeEmailOTP = async (
     ttl: 2 * 60,
   });
 
-  await sendMail({ to: user.email, subject: "Change Email", html: otp });
+  emailEmitter.emit(EMAIL_EVENTS.CHANGE_EMAIL, { to: user.email, otp });
 
   activityLogger.info({
     event: "user.change-email.otp-sent",
@@ -531,7 +531,7 @@ export const sendDeleteAccountOTP = async (user: IUser) => {
     ttl: 2 * 60,
   });
 
-  await sendMail({ to: user.email, subject: "Delete Account", html: otp });
+  emailEmitter.emit(EMAIL_EVENTS.DELETE_ACCOUNT, { to: user.email, otp });
 
   activityLogger.info({
     event: "user.delete-account.otp-sent",

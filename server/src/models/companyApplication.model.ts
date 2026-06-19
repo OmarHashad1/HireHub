@@ -5,7 +5,7 @@ import {
   COMPANY_SIZE,
 } from "../enums/companyApplication.enums.js";
 import { ICompanyApplication } from "../types/companyApplication.types.js";
-import { sendMail } from "../utils/smtp.util.js";
+import { emailEmitter, EMAIL_EVENTS } from "../events/email.events.js";
 import { decrypt, encrypt } from "../utils/encryption.util.js";
 
 const companyApplicationSchema = new Schema<ICompanyApplication>(
@@ -117,10 +117,8 @@ companyApplicationSchema.post(
     this: HydratedDocument<ICompanyApplication> & { newDoc: boolean },
   ) {
     if (this.newDoc) {
-      await sendMail({
+      emailEmitter.emit(EMAIL_EVENTS.APPLICATION_RECEIVED, {
         to: this.companyEmail,
-        subject: "Application Received!",
-        html: "<h1>Application Received</h1>",
       });
     }
   },
