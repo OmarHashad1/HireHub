@@ -101,35 +101,6 @@ Models and/or dependencies for these exist; the modules are not yet wired up:
 
 HireHub uses a strict **layered architecture**. Each request flows through clearly separated responsibilities, and every layer depends only on the one below it:
 
-```mermaid
-flowchart TD
-    Client[Client / API consumer]
-
-    subgraph Express["Express App"]
-        MW["Middleware\n(helmet · cors · rate-limit · auth · checkRole · validate)"]
-        R[Routers]
-        C[Controllers]
-        S[Services]
-        Repo["Repositories\n(DatabaseRepo&lt;T&gt;)"]
-        M[Mongoose Models]
-    end
-
-    Mongo[(MongoDB)]
-    Redis[(Redis)]
-    S3[(AWS S3)]
-    SMTP[[SMTP / Email]]
-    FCM[[Firebase FCM]]
-    Google[[Google OAuth]]
-
-    Client -->|HTTP| MW --> R --> C --> S
-    S --> Repo --> M --> Mongo
-    S -->|tokens · OTP · sessions · FCM tokens| Redis
-    S -->|documents · avatars · CVs| S3
-    S -->|verification · credentials · resets| SMTP
-    S -->|push| FCM
-    MW -->|OAuth strategy| Google
-```
-
 **Layer responsibilities**
 
 - **Middleware** — security headers, CORS, rate limiting, JWT auth, RBAC, and Zod validation of body/params/query/files.
@@ -195,37 +166,6 @@ sequenceDiagram
     API->>Redis: is token jti revoked?
     API->>API: check status + credentialsChangedAt vs iat
     API-->>U: 200 profile  (or 401 if revoked/expired)
-```
-
-### 3. Company application → admin approval (transactional)
-
-```mermaid
-sequenceDiagram
-    actor U as User
-    actor A as Admin
-    participant API as Express API
-    participant S3 as AWS S3
-    participant Mongo as MongoDB
-    participant Mail as SMTP
-
-    U->>API: POST /company/application (+ tax card, commercial reg.)
-    API->>S3: upload documents under company/{id}
-    API->>Mongo: save CompanyApplication (contactPhone AES-encrypted)
-    API->>Mail: confirmation email
-    API-->>U: 201 Submitted
-
-    A->>API: PATCH /company/application (approve/reject)
-    alt Approved
-        Note over API,Mongo: MongoDB transaction
-        API->>Mongo: create COMPANY user (temp password)
-        API->>Mongo: create Company (status ACTIVE)
-        API->>Mongo: mark application APPROVED
-        API->>Mail: email credentials (after commit)
-    else Rejected
-        API->>Mongo: mark application REJECTED (+ reason)
-        API->>Mail: rejection email
-    end
-    API-->>A: 200 OK
 ```
 
 ---
