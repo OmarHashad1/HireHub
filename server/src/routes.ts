@@ -39,7 +39,7 @@ export const ROUTES = {
     COMPANY_JOBS: "/:companyId/jobs",
   },
   APPLICATION: {
-    BASE: "/applcation",
+    BASE: "/application",
   },
   JOB: {
     BASE: "/job",
