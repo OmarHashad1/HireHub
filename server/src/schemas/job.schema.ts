@@ -7,8 +7,8 @@ import {
 } from "../enums/job.enums.js";
 
 export const createJobSchema = z.strictObject({
-  title: z.string().min(4).max(100),
-  description: z.string().min(10).max(5000),
+  title: z.string().min(4).max(20),
+  description: z.string().min(10).max(1000),
   requirements: z.array(z.string()).optional(),
   skills: z.array(z.string()).optional(),
   experienceLevel: z.enum([...Object.values(EXPERIENCE_LEVEL)]),

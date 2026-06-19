@@ -5,8 +5,7 @@ import { StatusCodes } from "http-status-codes";
 import { USER_STATUS } from "../enums/user.enums.js";
 import { IUser } from "../types/user.types.js";
 import { redisService } from "../DB/RedisService.js";
-import { AppError } from "../utils/errorHandler.util.js";
-
+import { AppError, BadRequestException } from "../utils/errorHandler.util.js";
 
 export const auth = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -23,11 +22,13 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
       });
     }
 
-    
+    if (!user.isEmailVerified) {
+      throw new BadRequestException("User account must be verified first");
+    }
 
     if (
       user.status == USER_STATUS.BANNED ||
-      user.status == USER_STATUS.DEACTIVAED
+      user.status == USER_STATUS.DEACTIVATED
     ) {
       return errorRes({
         res,

@@ -1,5 +1,5 @@
 import { COMPANY_APPLICATION_STATUS } from "./../../enums/companyApplication.enums.js";
-import { Types, UpdateQuery } from "mongoose";
+import mongoose, { Types, UpdateQuery } from "mongoose";
 import { CompanyApplicationRepo } from "../../repositories/companyApplication.repo.js";
 import { ICompanyApplication } from "../../types/companyApplication.types.js";
 import { encrypt } from "../../utils/encryption.util.js";
@@ -202,7 +202,7 @@ export const updateCompanyApplicationStatus = async (
       filter: { _id: application._id },
       update: {
         status: COMPANY_APPLICATION_STATUS.REJECTED,
-        rejectionReason: dto.rerejectionReason,
+        rejectionReason: dto.rejectionReason,
         reviewedBy: admin._id,
         reviewedAt: new Date(),
       },
@@ -210,49 +210,60 @@ export const updateCompanyApplicationStatus = async (
     return await sendMail({
       to: application.companyEmail,
       subject: "Application Status update",
-      html: `<h1>Application Status: ${dto.status}<h1> <p>${dto.rerejectionReason}<p>`,
+      html: `<h1>Application Status: ${dto.status}<h1> <p>${dto.rejectionReason}<p>`,
     });
   } else {
     const tempPassword = generatePassword();
 
-    const recruiter = await userRepo.create({
-      data: {
-        firstName: submitter.firstName,
-        lastName: submitter.lastName,
-        email: application.companyEmail,
-        password: tempPassword,
-        phoneNumber: application.contactPhone,
-        role: ROLE.COMPANY,
-        isEmailVerified: true,
-      },
-    });
-    await companyRepo.create({
-      data: {
-        owner: recruiter._id,
-        companyApplication: application._id,
-        name: application.companyName,
-        email: application.companyEmail,
-        industry: application.industry,
-        size: application.size,
-        location: application.location,
-        description: application.description,
-        documents: application.documents,
-        website: application.website ?? null,
-        foundedAt: application.foundedAt ?? null,
-        socialMedia: {
-          linkedin: application.linkedin ?? null,
-        },
-        status: COMPANY_STATUS.ACTIVE,
-      },
-    });
-    await applicationRepo.updateOne({
-      filter: { _id: application._id },
-      update: {
-        status: COMPANY_APPLICATION_STATUS.APPROVED,
-        reviewedBy: admin._id,
-        reviewedAt: new Date(),
-      },
-    });
+    const session = await mongoose.startSession();
+    let recruiter;
+    try {
+      await session.withTransaction(async () => {
+        recruiter = await userRepo.create({
+          data: {
+            firstName: submitter.firstName,
+            lastName: submitter.lastName,
+            email: application.companyEmail,
+            password: tempPassword,
+            phoneNumber: application.contactPhone,
+            role: ROLE.COMPANY,
+            isEmailVerified: true,
+          },
+          options: { session },
+        });
+        await companyRepo.create({
+          data: {
+            owner: recruiter,
+            companyApplication: application._id,
+            name: application.companyName,
+            email: application.companyEmail,
+            industry: application.industry,
+            size: application.size,
+            location: application.location,
+            description: application.description,
+            documents: application.documents,
+            website: application.website ?? null,
+            foundedAt: application.foundedAt ?? null,
+            socialMedia: {
+              linkedin: application.linkedin ?? null,
+            },
+            status: COMPANY_STATUS.ACTIVE,
+          },
+          options: { session },
+        });
+        await applicationRepo.updateOne({
+          filter: { _id: application._id },
+          update: {
+            status: COMPANY_APPLICATION_STATUS.APPROVED,
+            reviewedBy: admin._id,
+            reviewedAt: new Date(),
+          },
+          options: { session },
+        });
+      });
+    } finally {
+      session.endSession();
+    }
     await sendMail({
       to: application.companyEmail,
       subject: "Your HireHub Company Account",

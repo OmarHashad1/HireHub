@@ -20,7 +20,9 @@ export abstract class DatabaseRepo<RawDoc> {
 
   async create({
     data,
+    options,
   }: {
+    options?: CreateOptions;
     data: AnyKeys<RawDoc>;
   }): Promise<HydratedDocument<RawDoc>>;
 
@@ -28,7 +30,7 @@ export abstract class DatabaseRepo<RawDoc> {
     data,
     options,
   }: {
-    data: AnyKeys<RawDoc>;
+    data: AnyKeys<RawDoc>[];
     options: CreateOptions;
   }): Promise<HydratedDocument<RawDoc>[]>;
 
@@ -36,8 +38,8 @@ export abstract class DatabaseRepo<RawDoc> {
     data,
     options,
   }: {
-    data: AnyKeys<RawDoc>;
-    options: CreateOptions | undefined;
+    data: AnyKeys<RawDoc> | AnyKeys<RawDoc>[];
+    options?: CreateOptions | undefined;
   }): Promise<HydratedDocument<RawDoc>[] | HydratedDocument<RawDoc>> {
     const payload = await this.model.create(
       Array.isArray(data) ? data : [data],
@@ -130,7 +132,7 @@ export abstract class DatabaseRepo<RawDoc> {
       const parsedSize = Number(size as string);
       options.skip = (pageNumber - 1) * parsedSize;
       options.limit = parsedSize;
-       count = await this.model.countDocuments();
+      count = await this.model.countDocuments(filter || {});
     }
 
     const docs = await this.find({

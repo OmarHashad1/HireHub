@@ -20,7 +20,7 @@ export const getPublishedJobs = async () => {
 };
 
 export const getPublishedJob = async (jobId: string) => {
-  const doc = jobRepo.findOne({
+  const doc = await jobRepo.findOne({
     filter: { status: JOB_STATUS.PUBLISHED, _id: jobId },
     options: { lean: true },
   });

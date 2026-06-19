@@ -77,6 +77,7 @@ export const login = async (dto: loginDTO) => {
       password: 1,
       email: 1,
       firstName: 1,
+      isEmailVerified:1
     },
     options: { lean: true },
   });
@@ -95,9 +96,10 @@ export const login = async (dto: loginDTO) => {
     });
     throw new InternalServerErrorException();
   }
+
   if (
     user.status == USER_STATUS.BANNED ||
-    user.status == USER_STATUS.DEACTIVAED
+    user.status == USER_STATUS.DEACTIVATED
   ) {
     activityLogger.warn({
       action: LOG_ACTION.BLOCK_LOGIN,
@@ -111,6 +113,9 @@ export const login = async (dto: loginDTO) => {
       "Your account has been suspended. Please contact support.",
     );
   }
+  if (!user.isEmailVerified) {
+    throw new BadRequestException("User account must be verified first");
+  }
 
   const { accessToken, refreshToken } = await generateTokens({
     id: user._id as unknown as string,
@@ -118,9 +123,9 @@ export const login = async (dto: loginDTO) => {
     role: user.role,
   });
 
-  redisService.addFCM(user._id, dto.FCM);
+  await redisService.addFCM(user._id, dto.FCM);
 
-  sendNotification({
+  await sendNotification({
     userId: user._id,
     data: { title: "Login Attempt", body: "Login successfully" },
   });

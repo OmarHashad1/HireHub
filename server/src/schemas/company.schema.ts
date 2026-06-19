@@ -85,18 +85,18 @@ export const updateCompanyApplicationStatusSchema = z
       COMPANY_APPLICATION_STATUS.APPROVED,
       COMPANY_APPLICATION_STATUS.REJECTED,
     ]),
-    rerejectionReason: z.string().min(5).optional(),
+    rejectionReason: z.string().min(5).optional(),
   })
   .refine(
     (data) => {
       if (data.status == COMPANY_APPLICATION_STATUS.REJECTED) {
-        return !!data.rerejectionReason;
+        return !!data.rejectionReason;
       }
       return true;
     },
     {
       message: "Rejection reason must be provided",
-      path: ["rerejectionReason"],
+      path: ["rejectionReason"],
     },
   );
 
