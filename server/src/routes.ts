@@ -40,10 +40,14 @@ export const ROUTES = {
   },
   APPLICATION: {
     BASE: "/application",
+    USER_APPLICATIONS: "/me",
+    APPLICATION_ITEM: "/:id",
+    WITHDRAW_APPLICATION: "/:id/withdraw",
   },
   JOB: {
     BASE: "/job",
     JOB_ITEM: "/:id",
+    JOB_APPLICATION: "/:id/application",
     JOBS: "/jobs",
     COMPANY_JOBS: "/company/:companyId/jobs",
     JOB_PUBLISH: "/:id/publish",

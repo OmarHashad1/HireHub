@@ -17,6 +17,10 @@ import { checkRole } from "../../middlewares/checkRole.middleware.js";
 import { ROLE } from "../../enums/user.enums.js";
 import { auth } from "../../middlewares/auth.middleware.js";
 import { createJobSchema } from "../../schemas/job.schema.js";
+import { uploadCV } from "../../utils/multer.utils.js";
+import { createApplicationSchema } from "../../schemas/application.schema.js";
+import { mutlerFileSchema } from "../../schemas/global.schema.js";
+import { createApplicationController } from "../application/application.controller.js";
 
 export const jobRouter: Router = Router();
 
@@ -82,3 +86,17 @@ jobRouter.delete(
   }),
   deleteJobController,
 );
+
+jobRouter.post(
+  ROUTES.JOB.JOB_APPLICATION,
+  auth,
+  checkRole([ROLE.USER]),
+  uploadCV.single("cv"),
+  validate({
+    params: objectIdParamSchema,
+    body: createApplicationSchema,
+    file: mutlerFileSchema.optional(),
+  }),
+  createApplicationController
+);
+

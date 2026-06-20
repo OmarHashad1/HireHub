@@ -1,6 +1,8 @@
 import {
+  CopyObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
@@ -84,6 +86,7 @@ export const uploadAssets = async ({
 
   return filesLinks;
 };
+
 export const getAsset = async ({
   Bucket = AWS_BUCKET_NAME,
   Key,
@@ -109,7 +112,47 @@ export const deleteAsset = async ({
 export const deleteAssets = async (Keys: string[]) => {
   await Promise.all(
     Keys.map((Key) => {
-     return  deleteAsset({ Key });
+      return deleteAsset({ Key });
     }),
   );
 };
+
+export const assetExists = async ({
+  Key,
+  Bucket = AWS_BUCKET_NAME,
+}: {
+  Key: string;
+  Bucket?: string;
+}): Promise<boolean> => {
+  try {
+    await client.send(new HeadObjectCommand({ Bucket, Key }));
+    return true;
+  } catch (err) {
+    if (
+      err instanceof Error &&
+      (err.name === "NotFound" || err.name === "NoSuchKey")
+    )
+      return false;
+    throw err;
+  }
+};
+
+export const copyAsset = async ({
+  sourceKey,
+  destKey,
+  Bucket = AWS_BUCKET_NAME,
+}: {
+  sourceKey: string;
+  destKey: string;
+  Bucket?: string;
+}) => {
+  const command = new CopyObjectCommand({
+    Bucket,
+    CopySource: `${Bucket}/${sourceKey.split("/").map(encodeURIComponent).join("/")}`,
+    Key: destKey,
+  });
+  await client.send(command);
+  return destKey;
+};
+
+
