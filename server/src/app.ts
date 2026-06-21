@@ -22,6 +22,7 @@ import { auth } from "./middlewares/auth.middleware.js";
 import { jobRouter } from "./modules/job/jobs.router.js";
 import { applicationRouter } from "./modules/application/application.router.js";
 import { savedJobRouter } from "./modules/saved-job/savedJobs.router.js";
+import { reportRouter } from "./modules/report/report.router.js";
 
 export const app = async () => {
   const APP: Express = express();
@@ -52,7 +53,7 @@ export const app = async () => {
   APP.use(ROUTES.JOB.BASE, jobRouter);
   APP.use(ROUTES.APPLICATION.BASE, applicationRouter);
   APP.use(ROUTES.SAVED_JOB.BASE, savedJobRouter);
-  
+  APP.use(ROUTES.REPORT.BASE,reportRouter)
   APP.all("/{*dummy}", (_req: Request, _res: Response, next: NextFunction) => {
     next(new NotFoundException());
   });

@@ -1,0 +1,102 @@
+import { REPORT_STATUS, REPORT_TARGET_TYPE } from "../../enums/report.enums.js";
+import { ROLE, USER_STATUS } from "../../enums/user.enums.js";
+import { CompanyRepo } from "../../repositories/company.repo.js";
+import { ReportRepo } from "../../repositories/report.repo.js";
+import { UserRepo } from "../../repositories/user.repo.js";
+import {
+  companyReportDTO,
+  userReportDTO,
+} from "../../schemas/report.schema.js";
+import { IUser } from "../../types/user.types.js";
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenExceptions,
+  NotFoundException,
+} from "../../utils/errorHandler.util.js";
+
+const companyRepo = new CompanyRepo();
+const reportRepo = new ReportRepo();
+const userRepo = new UserRepo();
+
+export const reportCompany = async (
+  user: IUser,
+  companyId: string,
+  dto: companyReportDTO,
+) => {
+  const company = await companyRepo.findOne({
+    filter: { _id: companyId },
+    options: { lean: true },
+  });
+  if (!company) throw new NotFoundException("Company not found");
+
+  const reportExist = await reportRepo.findOne({
+    filter: {
+      reportedBy: user._id,
+      targetId: companyId,
+      targetType: REPORT_TARGET_TYPE.COMPANY,
+      status: REPORT_STATUS.PENDING,
+    },
+    options: { lean: true },
+  });
+
+  if (reportExist)
+    throw new ConflictException("There is a pending report for this company");
+
+  return await reportRepo.create({
+    data: {
+      reportedBy: user._id,
+      targetType: REPORT_TARGET_TYPE.COMPANY,
+      targetId: companyId,
+      ...dto,
+    },
+  });
+};
+
+export const reportUser = async (
+  companyUser: IUser,
+  userId: string,
+  dto: userReportDTO,
+) => {
+  const { companyId, ...reportData } = dto;
+
+  const companyExist = await companyRepo.findOne({
+    filter: { _id: companyId },
+    options: { lean: true },
+  });
+  if (!companyExist) throw new NotFoundException("Company not found");
+  if (!companyExist.owner.equals(companyUser._id))
+    throw new ForbiddenExceptions("User doesn't own the company");
+
+  const userExist = await userRepo.findOne({
+    filter: { _id: userId },
+    options: { lean: true },
+    projection: { status: 1, _id: 1, role: 1 },
+  });
+  if (!userExist) throw new NotFoundException("User not found");
+  if (userExist.status == USER_STATUS.BANNED)
+    throw new ConflictException("User account is banned ");
+  if (userExist.role != ROLE.USER)
+    throw new BadRequestException("Reported user can't be admin or company");
+  const reportExist = await reportRepo.findOne({
+    filter: {
+      reportedBy: companyUser._id,
+      targetId: userId,
+      targetType: REPORT_TARGET_TYPE.USER,
+      status: REPORT_STATUS.PENDING,
+    },
+    options: { lean: true },
+  });
+
+  if (reportExist)
+    throw new ConflictException("There is a pending report for this user");
+
+  return await reportRepo.create({
+    data: {
+      reportedBy: companyUser._id,
+      targetType: REPORT_TARGET_TYPE.USER,
+      targetId: userId,
+      ...reportData,
+    },
+  });
+};

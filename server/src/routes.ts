@@ -53,8 +53,13 @@ export const ROUTES = {
     JOB_PUBLISH: "/:id/publish",
     JOB_CLOSE: "/:id/close",
   },
-  SAVED_JOB:{
-    BASE:"/save",
-    SAVE_ITEM:"/:id"
-  }
+  SAVED_JOB: {
+    BASE: "/save",
+    SAVE_ITEM: "/:id",
+  },
+  REPORT: {
+    BASE: "/report",
+    REPORT_COMPANY: "/company/:id",
+    REPORT_USER: "/user/:id",
+  },
 } as const;

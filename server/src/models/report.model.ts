@@ -30,8 +30,8 @@ const reportSchema = new Schema<IReport>(
     },
     otherReason: {
       type: String,
-      min: 10,
-      max: 100,
+      minLength: 10,
+      maxLength: 100,
       required: function (this: IReport) {
         return this.reason == REPORT_REASON.OTHER;
       },
