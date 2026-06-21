@@ -2,6 +2,7 @@ import { StatusCodes } from "http-status-codes";
 import { NextFunction, Request, Response } from "express";
 import {
   createApplication,
+  getJobApplications,
   getSingleApplication,
   getUserApplications,
   withdrawApplication,
@@ -86,6 +87,29 @@ export const createApplicationController = async (
       res,
       message: "Application Created successfully",
       status: StatusCodes.CREATED,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getJobApplicationsController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const payload = await getJobApplications(
+      req.user as IUser,
+      req.params.id as string,
+      req.query as unknown as paginationQueryDTO,
+    );
+
+    successRes({
+      res,
+      message: "Job applications fetched successfully",
+      status: StatusCodes.OK,
+      data: payload,
     });
   } catch (err) {
     next(err);

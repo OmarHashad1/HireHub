@@ -25,10 +25,12 @@ import { activityLogger } from "../../utils/logger.util.js";
 import { LOG_ACTION, LOG_TARGET_TYPE } from "../../enums/log.enums.js";
 import { emailEmitter, EMAIL_EVENTS } from "../../events/email.events.js";
 import { paginationQueryDTO } from "../../schemas/global.schema.js";
+import { CompanyRepo } from "../../repositories/company.repo.js";
+import { COMPANY_STATUS } from "../../enums/company.enums.js";
 
 const applicationRepo = new ApplicationRepo();
 const jobRepo = new JobRepo();
-
+const companyRepo = new CompanyRepo();
 export const getUserApplications = async (
   user: IUser,
   { page, size }: paginationQueryDTO,
@@ -53,7 +55,7 @@ export const getSingleApplication = async (
 ) => {
   const application = await applicationRepo.findOne({
     filter: { _id: applicationId },
-    options: { lean: true },
+    options: { lean: true, populate: { path: "job", select: { company: 1 } } },
   });
   if (!application)
     throw new NotFoundException(
@@ -64,6 +66,26 @@ export const getSingleApplication = async (
     throw new ForbiddenExceptions(
       "You do not have permission to access this application. You can only view your own applications.",
     );
+
+  if (user.role == ROLE.COMPANY) {
+    const company = await companyRepo.findOne({
+      filter: { owner: user._id, status: COMPANY_STATUS.ACTIVE },
+      options: { lean: true },
+    });
+
+    if (!company) {
+      throw new NotFoundException("Company not found");
+    }
+    if (
+      !(
+        application.job as unknown as { company: Types.ObjectId }
+      ).company.equals(company._id)
+    ) {
+      throw new ForbiddenExceptions(
+        "You do not have permission to access this application. You can only view applications for your own company's jobs.",
+      );
+    }
+  }
 
   return application;
 };
@@ -123,8 +145,6 @@ export const createApplication = async (
     options: { lean: true },
   });
 
-
-
   if (!job)
     throw new NotFoundException(
       "Job not found. It may have been removed or the id is incorrect.",
@@ -148,7 +168,7 @@ export const createApplication = async (
     throw new ConflictException("You have already applied to this job.");
 
   const _id = new Types.ObjectId();
-  
+
   let cvKey: string;
   if (cv) {
     cvKey = await uploadAsset({
@@ -192,4 +212,36 @@ export const createApplication = async (
     await deleteAsset({ Key: cvKey });
     throw err;
   }
+};
+
+export const getJobApplications = async (
+  user: IUser,
+  jobId: string,
+  dto: paginationQueryDTO,
+) => {
+  const company = await companyRepo.findOne({
+    filter: { owner: user._id, status: COMPANY_STATUS.ACTIVE },
+    options: { lean: true },
+  });
+
+  if (!company) {
+    throw new NotFoundException("Company not found");
+  }
+
+  const job = await jobRepo.findOne({
+    filter: { _id: jobId },
+    options: { lean: true },
+  });
+  if (!job) {
+    throw new NotFoundException("Jobƒ not found");
+  }
+
+  const payload = await applicationRepo.paginate({
+    filter: { job: jobId },
+    options: { lean: true },
+    page: dto.page,
+    size: dto.size,
+  });
+
+  return payload;
 };

@@ -26,7 +26,6 @@ applicationRouter.get(
   ROUTES.APPLICATION.APPLICATION_ITEM,
   auth,
   validate({ params: objectIdParamSchema }),
-  checkRole([ROLE.ADMIN, ROLE.USER]),
   getSingleApplicationController,
 );
 
@@ -37,3 +36,5 @@ applicationRouter.patch(
   checkRole([ROLE.USER]),
   withdrawApplicationController,
 );
+
+applicationRouter.patch(ROUTES.APPLICATION.APPLICATION_STATUS)

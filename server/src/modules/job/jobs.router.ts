@@ -23,7 +23,7 @@ import {
   mutlerFileSchema,
   paginationQuerySchema,
 } from "../../schemas/global.schema.js";
-import { createApplicationController } from "../application/application.controller.js";
+import { createApplicationController, getJobApplicationsController } from "../application/application.controller.js";
 
 export const jobRouter: Router = Router();
 
@@ -108,3 +108,10 @@ jobRouter.post(
   createApplicationController
 );
 
+jobRouter.get(
+  ROUTES.JOB.JOB_APPLICATIONS,
+  auth,
+  checkRole([ROLE.COMPANY]),
+  validate({ params: objectIdParamSchema, query: paginationQuerySchema }),
+  getJobApplicationsController,
+);

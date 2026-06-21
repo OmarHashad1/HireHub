@@ -43,6 +43,8 @@ export const ROUTES = {
     USER_APPLICATIONS: "/me",
     APPLICATION_ITEM: "/:id",
     WITHDRAW_APPLICATION: "/:id/withdraw",
+    APPLICATION_STATUS: "/:id/status",
+    APPLICANTS_NOTE: "/:id/notes",
   },
   JOB: {
     BASE: "/job",
@@ -52,6 +54,7 @@ export const ROUTES = {
     COMPANY_JOBS: "/company/:companyId/jobs",
     JOB_PUBLISH: "/:id/publish",
     JOB_CLOSE: "/:id/close",
+    JOB_APPLICATIONS: "/:id/applications",
   },
   SAVED_JOB: {
     BASE: "/save",
