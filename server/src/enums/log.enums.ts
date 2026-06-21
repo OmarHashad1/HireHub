@@ -42,6 +42,23 @@ export enum LOG_ACTION {
 
   RESOLVE_REPORT = "resolve_report",
   DISMISS_REPORT = "dismiss_report",
+
+  SUBMIT_COMPANY_APPLICATION = "submit_company_application",
+  UPDATE_COMPANY_PROFILE = "update_company_profile",
+
+  CREATE_JOB = "create_job",
+  UPDATE_JOB = "update_job",
+  PUBLISH_JOB = "publish_job",
+  CLOSE_JOB = "close_job",
+
+  CREATE_APPLICATION = "create_application",
+  WITHDRAW_APPLICATION = "withdraw_application",
+
+  SAVE_JOB = "save_job",
+  UNSAVE_JOB = "unsave_job",
+
+  REPORT_COMPANY = "report_company",
+  REPORT_USER = "report_user",
 }
 
 export enum LOG_TARGET_TYPE {
@@ -50,6 +67,8 @@ export enum LOG_TARGET_TYPE {
   COMPANY_APPLICATION = "COMPANY_APPLICATION",
   JOB = "JOB",
   REPORT = "REPORT",
+  APPLICATION = "APPLICATION",
+  SAVED_JOB = "SAVED_JOB",
 }
 
 export enum LOG_LEVEL {

@@ -7,6 +7,8 @@ import {
   ConflictException,
   NotFoundException,
 } from "../../utils/errorHandler.util.js";
+import { activityLogger } from "../../utils/logger.util.js";
+import { LOG_ACTION, LOG_TARGET_TYPE } from "../../enums/log.enums.js";
 
 const jobRepo = new JobRepo();
 const savedJobRepo = new SavedJobRepo();
@@ -29,12 +31,23 @@ export const saveJob = async (user: IUser, jobId: string) => {
 
   if (savedJob) throw new ConflictException("Job already saved");
 
-  return await savedJobRepo.create({
+  const created = await savedJobRepo.create({
     data: {
       job: job._id,
       user: user._id,
     },
   });
+
+  activityLogger.info({
+    event: "savedJob.saved",
+    actor: user._id,
+    email: user.email,
+    action: LOG_ACTION.SAVE_JOB,
+    targetType: LOG_TARGET_TYPE.JOB,
+    targetId: job._id,
+  });
+
+  return created;
 };
 
 export const deleteSavedJob = async (user: IUser, jobId: string) => {
@@ -42,6 +55,16 @@ export const deleteSavedJob = async (user: IUser, jobId: string) => {
     filter: { user: user._id, job: jobId },
   });
   if (!result.deletedCount) throw new NotFoundException("Saved Job not found");
+
+  activityLogger.info({
+    event: "savedJob.removed",
+    actor: user._id,
+    email: user.email,
+    action: LOG_ACTION.UNSAVE_JOB,
+    targetType: LOG_TARGET_TYPE.JOB,
+    targetId: jobId,
+  });
+
   return result;
 };
 

@@ -21,6 +21,9 @@ import {
 import { multerStorageType } from "../../enums/multer.enums.js";
 import { APPLICATION_NAME } from "../../configs/env.config.js";
 import { randomUUID } from "node:crypto";
+import { activityLogger } from "../../utils/logger.util.js";
+import { LOG_ACTION, LOG_TARGET_TYPE } from "../../enums/log.enums.js";
+import { emailEmitter, EMAIL_EVENTS } from "../../events/email.events.js";
 
 const applicationRepo = new ApplicationRepo();
 const jobRepo = new JobRepo();
@@ -89,7 +92,18 @@ export const withdrawApplication = async (
 
   application.status = APPLICATION_STATUS.WITHDRAWN;
   application.withdrawnAt = new Date();
-  return await application.save();
+  const withdrawn = await application.save();
+
+  activityLogger.info({
+    event: "application.withdrawn",
+    actor: user._id,
+    email: user.email,
+    action: LOG_ACTION.WITHDRAW_APPLICATION,
+    targetType: LOG_TARGET_TYPE.APPLICATION,
+    targetId: application._id,
+  });
+
+  return withdrawn;
 };
 
 export const createApplication = async (
@@ -155,6 +169,18 @@ export const createApplication = async (
     const application = await applicationRepo.create({
       data: { _id, job: job._id, applicant: user._id, cv: cvKey, ...dto },
     });
+
+    activityLogger.info({
+      event: "application.created",
+      actor: user._id,
+      email: user.email,
+      action: LOG_ACTION.CREATE_APPLICATION,
+      targetType: LOG_TARGET_TYPE.APPLICATION,
+      targetId: application._id,
+    });
+
+    emailEmitter.emit(EMAIL_EVENTS.APPLICATION_RECEIVED, { to: user.email });
+
     return application;
   } catch (err) {
     await deleteAsset({ Key: cvKey });

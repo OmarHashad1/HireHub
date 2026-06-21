@@ -11,6 +11,8 @@ import { CompanyRepo } from "../../repositories/company.repo.js";
 import { COMPANY_STATUS } from "../../enums/company.enums.js";
 import { FlattenMaps, Types, UpdateQuery } from "mongoose";
 import { IJob } from "../../types/job.types.js";
+import { activityLogger } from "../../utils/logger.util.js";
+import { LOG_ACTION, LOG_TARGET_TYPE } from "../../enums/log.enums.js";
 
 const companyRepo = new CompanyRepo();
 const jobRepo = new JobRepo();
@@ -59,12 +61,23 @@ export const createJob = async (user: IUser, dto: createJobDTO) => {
   if (company.status === COMPANY_STATUS.SUSPENDED)
     throw new BadRequestException("Company is suspended");
 
-  return await jobRepo.create({
+  const job = await jobRepo.create({
     data: {
       company: company._id,
       ...dto,
     },
   });
+
+  activityLogger.info({
+    event: "job.created",
+    actor: user._id,
+    email: user.email,
+    action: LOG_ACTION.CREATE_JOB,
+    targetType: LOG_TARGET_TYPE.JOB,
+    targetId: job._id,
+  });
+
+  return job;
 };
 
 const loadOwnedJob = async (user: IUser, jobId: string) => {
@@ -119,12 +132,34 @@ export const updateJob = async (
     }
   }
 
-  return await jobRepo.updateOne({ filter: { _id: job._id }, update });
+  const result = await jobRepo.updateOne({ filter: { _id: job._id }, update });
+
+  activityLogger.info({
+    event: "job.updated",
+    actor: user._id,
+    email: user.email,
+    action: LOG_ACTION.UPDATE_JOB,
+    targetType: LOG_TARGET_TYPE.JOB,
+    targetId: job._id,
+  });
+
+  return result;
 };
 
 export const deleteJob = async (user: IUser, jobId: string) => {
   const job = await loadOwnedJob(user, jobId);
-  return await jobRepo.deleteOne({ filter: { _id: job._id } });
+  const result = await jobRepo.deleteOne({ filter: { _id: job._id } });
+
+  activityLogger.info({
+    event: "job.deleted",
+    actor: user._id,
+    email: user.email,
+    action: LOG_ACTION.DELETE_JOB,
+    targetType: LOG_TARGET_TYPE.JOB,
+    targetId: job._id,
+  });
+
+  return result;
 };
 
 const transitionJobStatus = async (
@@ -147,10 +182,26 @@ const transitionJobStatus = async (
     );
   }
 
-  return jobRepo.updateOne({
+  const result = await jobRepo.updateOne({
     filter: { _id: job._id },
     update: { status: target },
   });
+
+  const transitionAction: Partial<Record<JOB_STATUS, LOG_ACTION>> = {
+    [JOB_STATUS.PUBLISHED]: LOG_ACTION.PUBLISH_JOB,
+    [JOB_STATUS.CLOSED]: LOG_ACTION.CLOSE_JOB,
+  };
+
+  activityLogger.info({
+    event: `job.${target}`,
+    actor: user._id,
+    email: user.email,
+    action: transitionAction[target],
+    targetType: LOG_TARGET_TYPE.JOB,
+    targetId: job._id,
+  });
+
+  return result;
 };
 
 export const publishJob = (user: IUser, jobId: string) =>

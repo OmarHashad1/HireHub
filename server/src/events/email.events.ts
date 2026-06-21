@@ -10,6 +10,7 @@ export const EMAIL_EVENTS = {
   APPLICATION_RECEIVED: "email.application-received",
   APPLICATION_STATUS_UPDATE: "email.application-status-update",
   COMPANY_ACCOUNT_CREATED: "email.company-account-created",
+  REPORT_RECEIVED: "email.report-received",
 } as const;
 
 export interface EmailEventPayloads {
@@ -29,6 +30,7 @@ export interface EmailEventPayloads {
     email: string;
     password: string;
   };
+  [EMAIL_EVENTS.REPORT_RECEIVED]: { to: string; targetType: string };
 }
 
 class EmailEmitter extends EventEmitter {
@@ -110,3 +112,11 @@ emailEmitter.on(
     });
   },
 );
+
+emailEmitter.on(EMAIL_EVENTS.REPORT_RECEIVED, async ({ to, targetType }) => {
+  await sendMail({
+    to,
+    subject: "Report Received",
+    html: `<h1>We received your report</h1><p>Your report against this ${targetType} has been submitted and is now pending review by our team.</p>`,
+  });
+});

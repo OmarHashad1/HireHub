@@ -24,6 +24,8 @@ import { generatePassword } from "../../utils/generatePasssword.util.js";
 import { UserRepo } from "../../repositories/user.repo.js";
 import { ROLE } from "../../enums/user.enums.js";
 import { JobRepo } from "../../repositories/job.repo.js";
+import { activityLogger } from "../../utils/logger.util.js";
+import { LOG_ACTION, LOG_TARGET_TYPE } from "../../enums/log.enums.js";
 
 const applicationRepo = new CompanyApplicationRepo();
 const companyRepo = new CompanyRepo();
@@ -112,6 +114,16 @@ export const companyApplication = async (
     await deleteAssets(Array.from(Object.values(filesLinks)));
     throw new InternalServerErrorException();
   }
+
+  activityLogger.info({
+    event: "company.application.submitted",
+    actor: user._id,
+    email: user.email,
+    action: LOG_ACTION.SUBMIT_COMPANY_APPLICATION,
+    targetType: LOG_TARGET_TYPE.COMPANY_APPLICATION,
+    targetId: payload._id,
+  });
+
   return payload;
 };
 
@@ -165,10 +177,21 @@ export const updateCompanyProfile = async (
     }
   }
 
-  return await companyRepo.updateOne({
+  const result = await companyRepo.updateOne({
     filter: { _id: company._id, owner: user._id },
     update,
   });
+
+  activityLogger.info({
+    event: "company.profile.updated",
+    actor: user._id,
+    email: user.email,
+    action: LOG_ACTION.UPDATE_COMPANY_PROFILE,
+    targetType: LOG_TARGET_TYPE.COMPANY,
+    targetId: company._id,
+  });
+
+  return result;
 };
 
 export const updateCompanyApplicationStatus = async (
@@ -211,6 +234,15 @@ export const updateCompanyApplicationStatus = async (
       to: application.companyEmail,
       status: dto.status,
       rejectionReason: dto.rejectionReason,
+    });
+
+    activityLogger.info({
+      event: "company.application.rejected",
+      actor: admin._id,
+      email: admin.email,
+      action: LOG_ACTION.REJECT_COMPANY_APPLICATION,
+      targetType: LOG_TARGET_TYPE.COMPANY_APPLICATION,
+      targetId: application._id,
     });
     return;
   } else {
@@ -269,6 +301,15 @@ export const updateCompanyApplicationStatus = async (
       to: application.companyEmail,
       email: application.companyEmail,
       password: tempPassword,
+    });
+
+    activityLogger.info({
+      event: "company.application.approved",
+      actor: admin._id,
+      email: admin.email,
+      action: LOG_ACTION.APPROVE_COMPANY_APPLICATION,
+      targetType: LOG_TARGET_TYPE.COMPANY_APPLICATION,
+      targetId: application._id,
     });
   }
 };

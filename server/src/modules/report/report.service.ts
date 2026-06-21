@@ -14,6 +14,9 @@ import {
   ForbiddenExceptions,
   NotFoundException,
 } from "../../utils/errorHandler.util.js";
+import { activityLogger } from "../../utils/logger.util.js";
+import { LOG_ACTION, LOG_TARGET_TYPE } from "../../enums/log.enums.js";
+import { emailEmitter, EMAIL_EVENTS } from "../../events/email.events.js";
 
 const companyRepo = new CompanyRepo();
 const reportRepo = new ReportRepo();
@@ -43,7 +46,7 @@ export const reportCompany = async (
   if (reportExist)
     throw new ConflictException("There is a pending report for this company");
 
-  return await reportRepo.create({
+  const report = await reportRepo.create({
     data: {
       reportedBy: user._id,
       targetType: REPORT_TARGET_TYPE.COMPANY,
@@ -51,6 +54,22 @@ export const reportCompany = async (
       ...dto,
     },
   });
+
+  activityLogger.info({
+    event: "report.company",
+    actor: user._id,
+    email: user.email,
+    action: LOG_ACTION.REPORT_COMPANY,
+    targetType: LOG_TARGET_TYPE.COMPANY,
+    targetId: companyId,
+  });
+
+  emailEmitter.emit(EMAIL_EVENTS.REPORT_RECEIVED, {
+    to: user.email,
+    targetType: REPORT_TARGET_TYPE.COMPANY,
+  });
+
+  return report;
 };
 
 export const reportUser = async (
@@ -91,7 +110,7 @@ export const reportUser = async (
   if (reportExist)
     throw new ConflictException("There is a pending report for this user");
 
-  return await reportRepo.create({
+  const report = await reportRepo.create({
     data: {
       reportedBy: companyUser._id,
       targetType: REPORT_TARGET_TYPE.USER,
@@ -99,4 +118,20 @@ export const reportUser = async (
       ...reportData,
     },
   });
+
+  activityLogger.info({
+    event: "report.user",
+    actor: companyUser._id,
+    email: companyUser.email,
+    action: LOG_ACTION.REPORT_USER,
+    targetType: LOG_TARGET_TYPE.USER,
+    targetId: userId,
+  });
+
+  emailEmitter.emit(EMAIL_EVENTS.REPORT_RECEIVED, {
+    to: companyUser.email,
+    targetType: REPORT_TARGET_TYPE.USER,
+  });
+
+  return report;
 };
