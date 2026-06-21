@@ -10,6 +10,7 @@ import {
 } from "./application.controller.js";
 import { validate } from "../../middlewares/validate.middleware.js";
 import { objectIdParamSchema } from "../../schemas/user.schema.js";
+import { paginationQuerySchema } from "../../schemas/global.schema.js";
 
 export const applicationRouter: Router = Router();
 
@@ -17,6 +18,7 @@ applicationRouter.get(
   ROUTES.APPLICATION.USER_APPLICATIONS,
   auth,
   checkRole([ROLE.ADMIN, ROLE.USER]),
+  validate({ query: paginationQuerySchema }),
   getUserApplicationsController,
 );
 

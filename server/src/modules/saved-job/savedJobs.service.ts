@@ -9,6 +9,7 @@ import {
 } from "../../utils/errorHandler.util.js";
 import { activityLogger } from "../../utils/logger.util.js";
 import { LOG_ACTION, LOG_TARGET_TYPE } from "../../enums/log.enums.js";
+import { paginationQueryDTO } from "../../schemas/global.schema.js";
 
 const jobRepo = new JobRepo();
 const savedJobRepo = new SavedJobRepo();
@@ -68,14 +69,19 @@ export const deleteSavedJob = async (user: IUser, jobId: string) => {
   return result;
 };
 
-export const getAllSavedJobs = async (user: IUser) => {
-  const payload = await savedJobRepo.find({
+export const getAllSavedJobs = async (
+  user: IUser,
+  { page, size }: paginationQueryDTO,
+) => {
+  const payload = await savedJobRepo.paginate({
     filter: { user: user._id },
     options: {
       lean: true,
-      populate: { path: "job", select: { aiThreshold: 0, } },
+      populate: { path: "job", select: { aiThreshold: 0 } },
     },
     projection: { job: 1 },
+    page,
+    size,
   });
 
   return payload;

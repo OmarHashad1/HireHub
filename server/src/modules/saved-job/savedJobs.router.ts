@@ -10,6 +10,7 @@ import {
 } from "./savedJobs.controller.js";
 import { validate } from "../../middlewares/validate.middleware.js";
 import { objectIdParamSchema } from "../../schemas/user.schema.js";
+import { paginationQuerySchema } from "../../schemas/global.schema.js";
 
 export const savedJobRouter: Router = Router();
 
@@ -33,5 +34,6 @@ savedJobRouter.get(
   "/",
   auth,
   checkRole([ROLE.USER]),
+  validate({ query: paginationQuerySchema }),
   getAllSavedJobsController,
 );

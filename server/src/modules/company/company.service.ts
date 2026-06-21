@@ -26,6 +26,7 @@ import { ROLE } from "../../enums/user.enums.js";
 import { JobRepo } from "../../repositories/job.repo.js";
 import { activityLogger } from "../../utils/logger.util.js";
 import { LOG_ACTION, LOG_TARGET_TYPE } from "../../enums/log.enums.js";
+import { paginationQueryDTO } from "../../schemas/global.schema.js";
 
 const applicationRepo = new CompanyApplicationRepo();
 const companyRepo = new CompanyRepo();
@@ -317,6 +318,7 @@ export const updateCompanyApplicationStatus = async (
 export const getCompanyJobs = async (
   user: IUser,
   { companyId }: getCompanyJobsDTO,
+  { page, size }: paginationQueryDTO,
 ) => {
   const company = await companyRepo.findOne({
     filter: { _id: companyId },
@@ -331,9 +333,11 @@ export const getCompanyJobs = async (
     );
   }
 
-  const payload = await jobRepo.find({
+  const payload = await jobRepo.paginate({
     filter: { company: company._id },
     options: { lean: true },
+    page,
+    size,
   });
   return payload;
 };

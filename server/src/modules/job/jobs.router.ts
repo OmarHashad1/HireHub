@@ -19,12 +19,19 @@ import { auth } from "../../middlewares/auth.middleware.js";
 import { createJobSchema } from "../../schemas/job.schema.js";
 import { uploadCV } from "../../utils/multer.utils.js";
 import { createApplicationSchema } from "../../schemas/application.schema.js";
-import { mutlerFileSchema } from "../../schemas/global.schema.js";
+import {
+  mutlerFileSchema,
+  paginationQuerySchema,
+} from "../../schemas/global.schema.js";
 import { createApplicationController } from "../application/application.controller.js";
 
 export const jobRouter: Router = Router();
 
-jobRouter.get(ROUTES.JOB.JOBS, getPublishedJobsController);
+jobRouter.get(
+  ROUTES.JOB.JOBS,
+  validate({ query: paginationQuerySchema }),
+  getPublishedJobsController,
+);
 
 jobRouter.get(
   ROUTES.JOB.JOB_ITEM,
@@ -38,6 +45,7 @@ jobRouter.get(
     params: objectIdParamSchema
       .extend({ companyId: objectIdParamSchema.shape.id })
       .omit({ id: true }),
+    query: paginationQuerySchema,
   }),
   getCompanyPublishedJobsController,
 );

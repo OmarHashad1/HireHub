@@ -14,6 +14,7 @@ import { successRes } from "../../utils/response.util.js";
 import { StatusCodes } from "http-status-codes";
 import { IUser } from "../../types/user.types.js";
 import { createJobDTO } from "../../schemas/job.schema.js";
+import { paginationQueryDTO } from "../../schemas/global.schema.js";
 
 export const getPublishedJobsController = async (
   req: Request,
@@ -21,7 +22,9 @@ export const getPublishedJobsController = async (
   next: NextFunction,
 ) => {
   try {
-    const payload = await getPublishedJobs();
+    const payload = await getPublishedJobs(
+      req.query as unknown as paginationQueryDTO,
+    );
     successRes({
       res,
       message: "Data Fetched Successfully",
@@ -59,6 +62,7 @@ export const getCompanyPublishedJobsController = async (
   try {
     const payload = await getCompanyPublishedJobs(
       req.params.companyId as string,
+      req.query as unknown as paginationQueryDTO,
     );
     successRes({
       res,

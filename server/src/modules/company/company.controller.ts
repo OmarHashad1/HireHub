@@ -15,6 +15,7 @@ import {
   updateCompanyApplicationStatusDTO,
   updateCompanyProfileDTO,
 } from "../../schemas/company.schema.js";
+import { paginationQueryDTO } from "../../schemas/global.schema.js";
 
 export const companyApplicationController = async (
   req: Request,
@@ -107,6 +108,7 @@ export const getCompanyJobsController = async (
     const payload = await getCompanyJobs(
       req.user as IUser,
       req.params as getCompanyJobsDTO,
+      req.query as unknown as paginationQueryDTO,
     );
     successRes({
       res,

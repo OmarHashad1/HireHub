@@ -24,18 +24,24 @@ import { randomUUID } from "node:crypto";
 import { activityLogger } from "../../utils/logger.util.js";
 import { LOG_ACTION, LOG_TARGET_TYPE } from "../../enums/log.enums.js";
 import { emailEmitter, EMAIL_EVENTS } from "../../events/email.events.js";
+import { paginationQueryDTO } from "../../schemas/global.schema.js";
 
 const applicationRepo = new ApplicationRepo();
 const jobRepo = new JobRepo();
 
-export const getUserApplications = async (user: IUser) => {
-  const payload = await applicationRepo.find({
+export const getUserApplications = async (
+  user: IUser,
+  { page, size }: paginationQueryDTO,
+) => {
+  const payload = await applicationRepo.paginate({
     filter: {
       applicant: user._id,
     },
     options: {
       lean: true,
     },
+    page,
+    size,
   });
 
   return payload;

@@ -7,6 +7,7 @@ import {
 import { IUser } from "../../types/user.types.js";
 import { successRes } from "../../utils/response.util.js";
 import { StatusCodes } from "http-status-codes";
+import { paginationQueryDTO } from "../../schemas/global.schema.js";
 
 export const saveJobController = async (
   req: Request,
@@ -48,7 +49,10 @@ export const getAllSavedJobsController = async (
   next: NextFunction,
 ) => {
   try {
-    const payload = await getAllSavedJobs(req.user as IUser);
+    const payload = await getAllSavedJobs(
+      req.user as IUser,
+      req.query as unknown as paginationQueryDTO,
+    );
     successRes({
       res,
       message: "User saved jobs fetched successfully",

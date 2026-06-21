@@ -19,6 +19,7 @@ import { uploadApplicationDoc } from "../../utils/multer.utils.js";
 import { auth } from "../../middlewares/auth.middleware.js";
 import { checkRole } from "../../middlewares/checkRole.middleware.js";
 import { ROLE } from "../../enums/user.enums.js";
+import { paginationQuerySchema } from "../../schemas/global.schema.js";
 
 export const companyRouter: Router = Router();
 
@@ -64,6 +65,6 @@ companyRouter.get(
   ROUTES.COMPANY.COMPANY_JOBS,
   auth,
   checkRole([ROLE.ADMIN, ROLE.COMPANY]),
-  validate({ params: getCompanyJobsSchema }),
+  validate({ params: getCompanyJobsSchema, query: paginationQuerySchema }),
   getCompanyJobsController,
 );

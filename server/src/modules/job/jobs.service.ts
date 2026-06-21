@@ -13,14 +13,17 @@ import { FlattenMaps, Types, UpdateQuery } from "mongoose";
 import { IJob } from "../../types/job.types.js";
 import { activityLogger } from "../../utils/logger.util.js";
 import { LOG_ACTION, LOG_TARGET_TYPE } from "../../enums/log.enums.js";
+import { paginationQueryDTO } from "../../schemas/global.schema.js";
 
 const companyRepo = new CompanyRepo();
 const jobRepo = new JobRepo();
 
-export const getPublishedJobs = async () => {
-  return jobRepo.find({
+export const getPublishedJobs = async ({ page, size }: paginationQueryDTO) => {
+  return jobRepo.paginate({
     filter: { status: JOB_STATUS.PUBLISHED },
     options: { lean: true },
+    page,
+    size,
   });
 };
 
@@ -36,7 +39,10 @@ export const getPublishedJob = async (
   return doc;
 };
 
-export const getCompanyPublishedJobs = async (companyId: string) => {
+export const getCompanyPublishedJobs = async (
+  companyId: string,
+  { page, size }: paginationQueryDTO,
+) => {
   const company = await companyRepo.findOne({
     filter: { _id: companyId, status: COMPANY_STATUS.ACTIVE },
     options: { lean: true },
@@ -44,9 +50,11 @@ export const getCompanyPublishedJobs = async (companyId: string) => {
   });
   if (!company) throw new NotFoundException("Company not found");
 
-  return jobRepo.find({
+  return jobRepo.paginate({
     filter: { company: company._id, status: JOB_STATUS.PUBLISHED },
     options: { lean: true },
+    page,
+    size,
   });
 };
 

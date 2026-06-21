@@ -9,6 +9,7 @@ import {
 import { IUser } from "../../types/user.types.js";
 import { successRes } from "../../utils/response.util.js";
 import { createApplicationDTO } from "../../schemas/application.schema.js";
+import { paginationQueryDTO } from "../../schemas/global.schema.js";
 
 export const getUserApplicationsController = async (
   req: Request,
@@ -16,7 +17,10 @@ export const getUserApplicationsController = async (
   next: NextFunction,
 ) => {
   try {
-    const payload = await getUserApplications(req.user as IUser);
+    const payload = await getUserApplications(
+      req.user as IUser,
+      req.query as unknown as paginationQueryDTO,
+    );
     successRes({
       res,
       message: "User applications fetched successfully",
