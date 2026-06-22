@@ -6,11 +6,13 @@ import { ROLE } from "../../enums/user.enums.js";
 import {
   getSingleApplicationController,
   getUserApplicationsController,
+  updateApplicationController,
   withdrawApplicationController,
 } from "./application.controller.js";
 import { validate } from "../../middlewares/validate.middleware.js";
 import { objectIdParamSchema } from "../../schemas/user.schema.js";
 import { paginationQuerySchema } from "../../schemas/global.schema.js";
+import { updateApplicationSchema } from "../../schemas/application.schema.js";
 
 export const applicationRouter: Router = Router();
 
@@ -37,4 +39,13 @@ applicationRouter.patch(
   withdrawApplicationController,
 );
 
-applicationRouter.patch(ROUTES.APPLICATION.APPLICATION_STATUS)
+applicationRouter.patch(
+  ROUTES.APPLICATION.APPLICATION_ITEM,
+  auth,
+  checkRole([ROLE.COMPANY]),
+  validate({
+    params: objectIdParamSchema,
+    body:updateApplicationSchema
+  }),
+  updateApplicationController,
+);

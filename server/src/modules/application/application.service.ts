@@ -4,7 +4,10 @@ import { JOB_STATUS } from "../../enums/job.enums.js";
 import { ROLE } from "../../enums/user.enums.js";
 import { ApplicationRepo } from "../../repositories/application.repo.js";
 import { JobRepo } from "../../repositories/job.repo.js";
-import { createApplicationDTO } from "../../schemas/application.schema.js";
+import {
+  createApplicationDTO,
+  updateApplicationDTO,
+} from "../../schemas/application.schema.js";
 import { IUser } from "../../types/user.types.js";
 import {
   BadRequestException,
@@ -245,3 +248,90 @@ export const getJobApplications = async (
 
   return payload;
 };
+
+export const updateApplication = async (
+  user: IUser,
+  applicationId: string,
+  dto: updateApplicationDTO,
+) => {
+  const company = await companyRepo.findOne({
+    filter: { owner: user._id, status: COMPANY_STATUS.ACTIVE },
+    options: { lean: true },
+  });
+
+  if (!company) {
+    throw new NotFoundException(
+      "No active company is linked to your account, so you cannot update applications",
+    );
+  }
+
+  const application = await applicationRepo.findOne({
+    filter: { _id: applicationId },
+    options: {
+      lean: true,
+      populate: { path: "job", select: { company: 1 } },
+    },
+  });
+
+  if (!application) throw new NotFoundException("Application not found");
+  if (application.status === APPLICATION_STATUS.WITHDRAWN)
+    throw new ConflictException(
+      "This application has been withdrawn by the applicant and can no longer be updated",
+    );
+  if (
+    !(application.job as unknown as { company: Types.ObjectId }).company.equals(
+      company._id,
+    )
+  ) {
+    throw new ForbiddenExceptions(
+      "You cannot update an application for a job that belongs to another company",
+    );
+  }
+  if (dto.status) {
+    const reqiredStatus: Partial<
+      Record<APPLICATION_STATUS, APPLICATION_STATUS>
+    > = {
+      [APPLICATION_STATUS.OFFER]: APPLICATION_STATUS.INTERVIEW,
+      [APPLICATION_STATUS.REJECTED]: APPLICATION_STATUS.APPLIED,
+      [APPLICATION_STATUS.INTERVIEW]: APPLICATION_STATUS.APPLIED,
+      [APPLICATION_STATUS.REVIEWED]: APPLICATION_STATUS.APPLIED,
+    };
+
+    if (application.status !== reqiredStatus[dto.status]) {
+      throw new BadRequestException(
+        `Cannot change application status from "${application.status}" to "${dto.status}". A "${dto.status}" status requires the application to currently be "${reqiredStatus[dto.status]}"`,
+      );
+    }
+    if (dto.status === APPLICATION_STATUS.REJECTED && !dto.rejectionReason) {
+      throw new BadRequestException(
+        "A rejection reason is required when rejecting an application",
+      );
+    }
+    await applicationRepo.updateOne({
+      filter: {
+        _id: application._id,
+      },
+      update: {
+        status: dto.status,
+        ...(dto.rejectionReason && { rejectionReason: dto.rejectionReason }),
+        ...(dto.recruiterNotes && {
+          recruiterNotes: dto.recruiterNotes,
+        }),
+      },
+    });
+  } else {
+    await applicationRepo.updateOne({
+      filter: {
+        _id: application._id,
+      },
+      update: { recruiterNotes: dto.recruiterNotes },
+    });
+  }
+};
+
+/*
+offer->interview
+rejected->applied
+applied->interview
+applied->inteview
+*/

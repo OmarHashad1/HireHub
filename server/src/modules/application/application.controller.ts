@@ -5,11 +5,15 @@ import {
   getJobApplications,
   getSingleApplication,
   getUserApplications,
+  updateApplication,
   withdrawApplication,
 } from "./application.service.js";
 import { IUser } from "../../types/user.types.js";
 import { successRes } from "../../utils/response.util.js";
-import { createApplicationDTO } from "../../schemas/application.schema.js";
+import {
+  createApplicationDTO,
+  updateApplicationDTO,
+} from "../../schemas/application.schema.js";
 import { paginationQueryDTO } from "../../schemas/global.schema.js";
 
 export const getUserApplicationsController = async (
@@ -110,6 +114,27 @@ export const getJobApplicationsController = async (
       message: "Job applications fetched successfully",
       status: StatusCodes.OK,
       data: payload,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateApplicationController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    await updateApplication(
+      req.user as IUser,
+      req.params.id as string,
+      req.body as updateApplicationDTO,
+    );
+    successRes({
+      res,
+      message: "Application status updated successfully",
+      status: StatusCodes.OK,
     });
   } catch (err) {
     next(err);

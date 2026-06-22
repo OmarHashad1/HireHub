@@ -43,7 +43,6 @@ export const ROUTES = {
     USER_APPLICATIONS: "/me",
     APPLICATION_ITEM: "/:id",
     WITHDRAW_APPLICATION: "/:id/withdraw",
-    APPLICATION_STATUS: "/:id/status",
     APPLICANTS_NOTE: "/:id/notes",
   },
   JOB: {
