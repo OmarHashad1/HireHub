@@ -19,8 +19,6 @@ import {
   notificationEmitter,
   NOTIFICATION_EVENTS,
 } from "../../events/notification.events.js";
-import { IInterview } from "../../types/inteview.types.js";
-
 const interviewRepo = new InterviewRepo();
 const applicationRepo = new ApplicationRepo();
 const companyRepo = new CompanyRepo();
