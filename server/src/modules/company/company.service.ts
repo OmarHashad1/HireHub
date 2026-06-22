@@ -20,6 +20,10 @@ import {
   updateCompanyProfileDTO,
 } from "../../schemas/company.schema.js";
 import { emailEmitter, EMAIL_EVENTS } from "../../events/email.events.js";
+import {
+  notificationEmitter,
+  NOTIFICATION_EVENTS,
+} from "../../events/notification.events.js";
 import { generatePassword } from "../../utils/generatePasssword.util.js";
 import { UserRepo } from "../../repositories/user.repo.js";
 import { ROLE } from "../../enums/user.enums.js";
@@ -237,6 +241,11 @@ export const updateCompanyApplicationStatus = async (
       rejectionReason: dto.rejectionReason,
     });
 
+    notificationEmitter.emit(NOTIFICATION_EVENTS.COMPANY_APPLICATION_DECISION, {
+      userId: submitter._id,
+      status: dto.status,
+    });
+
     activityLogger.info({
       event: "company.application.rejected",
       actor: admin._id,
@@ -302,6 +311,11 @@ export const updateCompanyApplicationStatus = async (
       to: application.companyEmail,
       email: application.companyEmail,
       password: tempPassword,
+    });
+
+    notificationEmitter.emit(NOTIFICATION_EVENTS.COMPANY_APPLICATION_DECISION, {
+      userId: submitter._id,
+      status: dto.status,
     });
 
     activityLogger.info({

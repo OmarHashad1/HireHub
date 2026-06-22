@@ -27,6 +27,10 @@ import { randomUUID } from "node:crypto";
 import { activityLogger } from "../../utils/logger.util.js";
 import { LOG_ACTION, LOG_TARGET_TYPE } from "../../enums/log.enums.js";
 import { emailEmitter, EMAIL_EVENTS } from "../../events/email.events.js";
+import {
+  notificationEmitter,
+  NOTIFICATION_EVENTS,
+} from "../../events/notification.events.js";
 import { paginationQueryDTO } from "../../schemas/global.schema.js";
 import { CompanyRepo } from "../../repositories/company.repo.js";
 import { COMPANY_STATUS } from "../../enums/company.enums.js";
@@ -194,27 +198,41 @@ export const createApplication = async (
     );
   }
 
+  let application;
   try {
-    const application = await applicationRepo.create({
+    application = await applicationRepo.create({
       data: { _id, job: job._id, applicant: user._id, cv: cvKey, ...dto },
     });
-
-    activityLogger.info({
-      event: "application.created",
-      actor: user._id,
-      email: user.email,
-      action: LOG_ACTION.CREATE_APPLICATION,
-      targetType: LOG_TARGET_TYPE.APPLICATION,
-      targetId: application._id,
-    });
-
-    emailEmitter.emit(EMAIL_EVENTS.APPLICATION_RECEIVED, { to: user.email });
-
-    return application;
   } catch (err) {
     await deleteAsset({ Key: cvKey });
     throw err;
   }
+
+  activityLogger.info({
+    event: "application.created",
+    actor: user._id,
+    email: user.email,
+    action: LOG_ACTION.CREATE_APPLICATION,
+    targetType: LOG_TARGET_TYPE.APPLICATION,
+    targetId: application._id,
+  });
+
+  emailEmitter.emit(EMAIL_EVENTS.APPLICATION_RECEIVED, { to: user.email });
+
+
+  const company = await companyRepo.findOne({
+    filter: { _id: job.company },
+    projection: { owner: 1 },
+    options: { lean: true },
+  });
+  if (company) {
+    notificationEmitter.emit(NOTIFICATION_EVENTS.APPLICATION_RECEIVED, {
+      userId: company.owner,
+      jobTitle: job.title,
+    });
+  }
+
+  return application;
 };
 
 export const getJobApplications = async (
@@ -299,7 +317,7 @@ export const updateApplication = async (
 
     if (application.status !== reqiredStatus[dto.status]) {
       throw new BadRequestException(
-        `Cannot change application status from "${application.status}" to "${dto.status}". A "${dto.status}" status requires the application to currently be "${reqiredStatus[dto.status]}"`,
+        `Cannot change application status from ${application.status} to ${dto.status}. A ${dto.status} status requires the application to currently be ${reqiredStatus[dto.status]}`,
       );
     }
     if (dto.status === APPLICATION_STATUS.REJECTED && !dto.rejectionReason) {
@@ -319,6 +337,11 @@ export const updateApplication = async (
         }),
       },
     });
+
+    notificationEmitter.emit(NOTIFICATION_EVENTS.APPLICATION_STATUS_UPDATE, {
+      userId: application.applicant,
+      status: dto.status,
+    });
   } else {
     await applicationRepo.updateOne({
       filter: {
@@ -327,11 +350,14 @@ export const updateApplication = async (
       update: { recruiterNotes: dto.recruiterNotes },
     });
   }
+
+  activityLogger.info({
+    event: "application.updated",
+    actor: user._id,
+    email: user.email,
+    action: LOG_ACTION.UPDATE_APPLICATION,
+    targetType: LOG_TARGET_TYPE.APPLICATION,
+    targetId: application._id,
+  });
 };
 
-/*
-offer->interview
-rejected->applied
-applied->interview
-applied->inteview
-*/

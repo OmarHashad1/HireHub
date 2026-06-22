@@ -52,6 +52,7 @@ export enum LOG_ACTION {
   CLOSE_JOB = "close_job",
 
   CREATE_APPLICATION = "create_application",
+  UPDATE_APPLICATION = "update_application",
   WITHDRAW_APPLICATION = "withdraw_application",
 
   SAVE_JOB = "save_job",
