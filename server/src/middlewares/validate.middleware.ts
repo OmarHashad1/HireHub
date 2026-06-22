@@ -14,9 +14,7 @@ export const validate = (schema: schemaKeys) => {
       if (!validationRes.success) {
         issues.push(...validationRes.error.issues);
       } else {
-        // Use defineProperty because in Express 5 `req.query` is a getter-only
-        // property — a plain assignment would throw. This shadows it with the
-        // validated (and coerced) data while staying writable for later middleware.
+
         Object.defineProperty(req, key as string, {
           value: validationRes.data,
           writable: true,
