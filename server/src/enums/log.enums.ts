@@ -60,6 +60,8 @@ export enum LOG_ACTION {
 
   REPORT_COMPANY = "report_company",
   REPORT_USER = "report_user",
+
+  SCHEDULE_INTERVIEW = "schedule_interview",
 }
 
 export enum LOG_TARGET_TYPE {
@@ -70,6 +72,7 @@ export enum LOG_TARGET_TYPE {
   REPORT = "REPORT",
   APPLICATION = "APPLICATION",
   SAVED_JOB = "SAVED_JOB",
+  INTERVIEW = "INTERVIEW",
 }
 
 export enum LOG_LEVEL {

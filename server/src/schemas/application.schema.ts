@@ -11,7 +11,6 @@ export const updateApplicationSchema = z
   .strictObject({
     status: z
       .enum([
-        APPLICATION_STATUS.INTERVIEW,
         APPLICATION_STATUS.REJECTED,
         APPLICATION_STATUS.OFFER,
       ])

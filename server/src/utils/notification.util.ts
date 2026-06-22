@@ -27,7 +27,9 @@ export const sendNotification = async ({
   };
 }) => {
   const token = (await redisService.getFCM(userId)) as string;
-
+  if (!token) {
+    return;
+    }
   const message = {
     token,
     data,

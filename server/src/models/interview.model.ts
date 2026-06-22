@@ -28,10 +28,6 @@ const interviewSchema = new Schema<IInterview>(
       type: Date,
       required: true,
     },
-    location: {
-      type: String,
-      default: null,
-    },
 
     status: {
       type: String,

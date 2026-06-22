@@ -64,4 +64,11 @@ export const ROUTES = {
     REPORT_COMPANY: "/company/:id",
     REPORT_USER: "/user/:id",
   },
+  INTERVIEW:{
+    BASE:"/interview",
+    ROOT:"/",
+    COMPANY_INTERVIEW:"/company",
+    INTERVIEW_ITEM:"/:id",
+
+  }
 } as const;

@@ -7,6 +7,7 @@ export const NOTIFICATION_EVENTS = {
   APPLICATION_STATUS_UPDATE: "notification.application-status-update",
   APPLICATION_RECEIVED: "notification.application-received",
   COMPANY_APPLICATION_DECISION: "notification.company-application-decision",
+  INTERVIEW_SCHEDULED: "notification.interview-scheduled",
 } as const;
 
 export interface NotificationEventPayloads {
@@ -21,6 +22,10 @@ export interface NotificationEventPayloads {
   [NOTIFICATION_EVENTS.COMPANY_APPLICATION_DECISION]: {
     userId: Types.ObjectId;
     status: string;
+  };
+  [NOTIFICATION_EVENTS.INTERVIEW_SCHEDULED]: {
+    userId: Types.ObjectId;
+    scheduledAt: Date;
   };
 }
 
@@ -42,9 +47,7 @@ class NotificationEmitter extends EventEmitter {
 
 export const notificationEmitter = new NotificationEmitter();
 
-// A missing FCM token (user not registered for push) makes sendNotification
-// throw — swallow it here so a failed push never breaks the request that
-// emitted it. Real delivery failures are logged for visibility.
+
 const safeSend = async (
   userId: Types.ObjectId,
   title: string,
@@ -86,6 +89,22 @@ notificationEmitter.on(
       userId,
       "Company application update",
       `Your company application was ${status}.`,
+    );
+  },
+);
+
+notificationEmitter.on(
+  NOTIFICATION_EVENTS.INTERVIEW_SCHEDULED,
+  async ({ userId, scheduledAt }) => {
+    const when = scheduledAt.toLocaleString("en-US", {
+      dateStyle: "long",
+      timeStyle: "short",
+      timeZone: "Africa/Cairo",
+    });
+    await safeSend(
+      userId,
+      "Interview scheduled",
+      `An interview has been scheduled for ${when}.`,
     );
   },
 );

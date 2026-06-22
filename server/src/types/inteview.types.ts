@@ -7,7 +7,6 @@ export interface IInterview extends Document {
   applicant: Types.ObjectId;
   type: INTERVIEW_TYPE;
   scheduledAt: Date;
-  location?: string | null;
   status: INTERVIEW_STATUS;
   cancelledAt?: Date | null;
   cancellationReason?: string | null;
