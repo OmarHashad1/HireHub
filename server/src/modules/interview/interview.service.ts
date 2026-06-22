@@ -19,10 +19,13 @@ import {
   notificationEmitter,
   NOTIFICATION_EVENTS,
 } from "../../events/notification.events.js";
+import { paginationQueryDTO } from "../../schemas/global.schema.js";
+
 const interviewRepo = new InterviewRepo();
 const applicationRepo = new ApplicationRepo();
 const companyRepo = new CompanyRepo();
 const userRepo = new UserRepo();
+
 export const scheduleInterview = async (
   user: IUser,
   dto: scheduleInterviewDTO,
@@ -106,6 +109,7 @@ export const scheduleInterview = async (
         data: {
           application: application._id,
           job: (application.job as unknown as { _id: Types.ObjectId })._id,
+          company: company._id,
           applicant: application.applicant,
           type: dto.type,
           scheduledAt: dto.scheduledAt,
@@ -132,4 +136,42 @@ export const scheduleInterview = async (
   });
 
   return { interview };
+};
+
+export const getCompanyInterviews = async (
+  user: IUser,
+  companyId: string,
+  paginatedto: paginationQueryDTO,
+) => {
+  const company = await companyRepo.findOne({
+    filter: {
+      _id: companyId,
+    },
+    options: {
+      lean: true,
+    },
+    projection: { owner: 1, _id: 1, status: 1 },
+  });
+
+  if (!company) {
+    throw new NotFoundException("Company not found");
+  }
+
+  if (!company.owner.equals(user._id)) {
+    throw new ForbiddenExceptions(
+      "You cannot don't have permission to access this data",
+    );
+  }
+
+  const interviews = await interviewRepo.paginate({
+    filter: {
+      company: companyId,
+    },
+    options: {
+      lean: true,
+    },
+    page: paginatedto.page,
+    size: paginatedto.size,
+  });
+  return interviews;
 };

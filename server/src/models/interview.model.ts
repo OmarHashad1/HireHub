@@ -9,6 +9,11 @@ const interviewSchema = new Schema<IInterview>(
       ref: "Application",
       required: true,
     },
+    company: {
+      type: Schema.Types.ObjectId,
+      ref: "Company",
+      required: true,
+    },
     job: {
       type: Schema.Types.ObjectId,
       ref: "Job",

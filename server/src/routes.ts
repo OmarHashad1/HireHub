@@ -67,7 +67,7 @@ export const ROUTES = {
   INTERVIEW:{
     BASE:"/interview",
     ROOT:"/",
-    COMPANY_INTERVIEW:"/company",
+    COMPANY_INTERVIEW:"/:id",
     INTERVIEW_ITEM:"/:id",
 
   }
