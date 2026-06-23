@@ -54,6 +54,7 @@ export enum LOG_ACTION {
   CREATE_APPLICATION = "create_application",
   UPDATE_APPLICATION = "update_application",
   WITHDRAW_APPLICATION = "withdraw_application",
+  AI_AUTO_REJECT_APPLICATION = "ai_auto_reject_application",
 
   SAVE_JOB = "save_job",
   UNSAVE_JOB = "unsave_job",

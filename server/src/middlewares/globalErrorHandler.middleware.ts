@@ -12,8 +12,7 @@ export const globalErrorHandler = (
   let status = err.statusCode;
   let message = err.message;
 
-  // Normalize known non-AppError errors (multer, mongoose/mongo) so they don't
-  // fall through to a generic 500.
+
   if (!status) {
     const raw = err as unknown as {
       name?: string;

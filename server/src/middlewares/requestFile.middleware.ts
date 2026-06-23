@@ -40,8 +40,7 @@ export const requestFileMiddleware = async (
       }
       ownedKey = req.user.avatar;
     } else if (path[1] === "application" && path[3] === "cv") {
-      // key: {APP}/application/{applicationId}/cv/{file}
-      // readable by: admin, the applicant, or the job's company owner
+     
       const applicationId = path[2];
       if (!applicationId) throw new BadRequestException("Invalid file path");
 
@@ -83,7 +82,6 @@ export const requestFileMiddleware = async (
       path[3] === "commercialRegistration" ||
       path[3] === "taxCard"
     ) {
-      // key: {APP}/company/{applicationId}/{field}/{file} — admin-only
       if (req.user.role != ROLE.ADMIN)
         throw new UnauthorizedException(
           "You are not allowed to access this file",

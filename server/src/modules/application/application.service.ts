@@ -24,7 +24,7 @@ import {
 import { multerStorageType } from "../../enums/multer.enums.js";
 import { APPLICATION_NAME } from "../../configs/env.config.js";
 import { randomUUID } from "node:crypto";
-import { activityLogger } from "../../utils/logger.util.js";
+import { activityLogger, serverLogger } from "../../utils/logger.util.js";
 import { LOG_ACTION, LOG_TARGET_TYPE } from "../../enums/log.enums.js";
 import { emailEmitter, EMAIL_EVENTS } from "../../events/email.events.js";
 import {
@@ -34,6 +34,8 @@ import {
 import { paginationQueryDTO } from "../../schemas/global.schema.js";
 import { CompanyRepo } from "../../repositories/company.repo.js";
 import { COMPANY_STATUS } from "../../enums/company.enums.js";
+import { scoreApplication } from "../Gemini/gemini.service.js";
+import { IJob } from "../../types/job.types.js";
 
 const applicationRepo = new ApplicationRepo();
 const jobRepo = new JobRepo();
@@ -219,7 +221,6 @@ export const createApplication = async (
 
   emailEmitter.emit(EMAIL_EVENTS.APPLICATION_RECEIVED, { to: user.email });
 
-
   const company = await companyRepo.findOne({
     filter: { _id: job.company },
     projection: { owner: 1 },
@@ -232,6 +233,14 @@ export const createApplication = async (
     });
   }
 
+  if (job.aiThreshold != null) {
+    scoreApplication(job as IJob, application).catch((err) =>
+      serverLogger.error(
+        { err, applicationId: application._id },
+        "Background AI scoring failed",
+      ),
+    );
+  }
   return application;
 };
 
@@ -359,4 +368,3 @@ export const updateApplication = async (
     targetId: application._id,
   });
 };
-

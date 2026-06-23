@@ -140,6 +140,15 @@ export const updateJob = async (
     }
   }
 
+  const mergedAutoReject = dto.autoReject ?? job.autoReject;
+  const mergedThreshold =
+    dto.aiThreshold !== undefined ? dto.aiThreshold : job.aiThreshold;
+  if (mergedAutoReject && mergedThreshold == null ) {
+    throw new BadRequestException(
+      "aiThreshold is required when autoReject is enabled",
+    );
+  }
+
   const result = await jobRepo.updateOne({ filter: { _id: job._id }, update });
 
   activityLogger.info({

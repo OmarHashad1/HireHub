@@ -45,3 +45,6 @@ export const AWS_SECRET_ACCESS_KEY = process.env
   .AWS_SECRET_ACCESS_KEY as string;
 export const AWS_EXPIRATION = process.env.AWS_EXPIRATION as unknown as number;
 export const AWS_BUCKET_NAME = process.env.AWS_BUCKET_NAME as string;
+
+export const GEMINI_API_KEY = process.env.GEMINI_API_KEY as string;
+export const GEMINI_MODEL = process.env.GEMINI_MODEL as string;

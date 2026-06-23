@@ -89,6 +89,11 @@ const jobSchema = new Schema<IJob>(
       max: 100,
       default: null,
     },
+
+    autoReject: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     toJSON: { virtuals: true, getters: true },

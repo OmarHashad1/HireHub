@@ -21,7 +21,6 @@ export const cloudUpload = (
             file: Express.Multer.File,
             callback: (error: Error | null, destination: string) => void,
           ) {
-
             callback(null, tmpdir());
           },
           filename(
@@ -56,11 +55,7 @@ export const cloudUpload = (
 export const uploadCV = cloudUpload(
   {
     maxSizeMB: 2,
-    allowedMimTypes: [
-      "application/pdf",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    ],
+    allowedMimTypes: ["application/pdf"],
     buildFileName: (_req, file) => `${randomUUID()}__${file.originalname}`,
   },
   multerStorageType.DESK,

@@ -56,5 +56,6 @@ CLAUDE.md
 documents
 documents/*
 
-#firebase
+#Firebase
 *firebase-adminsdk*.json
+

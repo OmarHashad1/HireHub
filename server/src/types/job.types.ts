@@ -31,6 +31,7 @@ export interface IJob extends Document {
   deadline?: Date | null;
   applicantsCount: number;
   aiThreshold?: number | null;
+  autoReject: boolean;
   status: JOB_STATUS;
   createdAt: Date;
   updatedAt: Date;

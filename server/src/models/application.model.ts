@@ -40,12 +40,18 @@ const applicationSchema = new Schema<IApplication>(
     },
 
     aiRating: {
-      type: String,
+      type: Number,
+      min: 0,
+      max: 100,
       default: null,
     },
     autoRejected: {
       type: Boolean,
       default: false,
+    },
+    aiNotes: {
+      type: String,
+      default: null,
     },
 
     hadInterview: {
