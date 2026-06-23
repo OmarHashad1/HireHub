@@ -62,6 +62,8 @@ export enum LOG_ACTION {
   REPORT_USER = "report_user",
 
   SCHEDULE_INTERVIEW = "schedule_interview",
+  UPDATE_INTERVIEW = "update_interview",
+  CANCEL_INTERVIEW = "cancel_interview",
 }
 
 export enum LOG_TARGET_TYPE {

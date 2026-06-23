@@ -55,6 +55,7 @@ userRouter.patch(
   ROUTES.USER.CHANGE_AVATAR,
   auth,
   uploadAvatar.single("avatar"),
+  checkRole([ROLE.USER]),
   validate({ file: mutlerFileSchema }),
   changeAvatarController,
 );

@@ -13,11 +13,12 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenExceptions,
+  InternalServerErrorException,
   NotFoundException,
 } from "../../utils/errorHandler.util.js";
 import { UserRepo } from "../../repositories/user.repo.js";
 import { USER_STATUS } from "../../enums/user.enums.js";
-import { activityLogger } from "../../utils/logger.util.js";
+import { activityLogger, serverLogger } from "../../utils/logger.util.js";
 import { LOG_ACTION, LOG_TARGET_TYPE } from "../../enums/log.enums.js";
 import {
   notificationEmitter,
@@ -123,6 +124,14 @@ export const scheduleInterview = async (
         options: { session },
       });
     });
+  } catch (err) {
+    serverLogger.error({
+      event: "interview.schedule.failed",
+      actor: user._id,
+      application: application._id,
+      err,
+    });
+    throw new InternalServerErrorException("Failed to schedule the interview");
   } finally {
     session.endSession();
   }
@@ -245,6 +254,18 @@ export const updateScheduledInterview = async (
   };
 
   await interviewRepo.updateOne({ filter: { _id: interview._id }, update });
+
+  const isCancellation = dto.status === INTERVIEW_STATUS.CANCELLED;
+  activityLogger.info({
+    event: isCancellation ? "interview.cancelled" : "interview.updated",
+    actor: user._id,
+    email: user.email,
+    action: isCancellation
+      ? LOG_ACTION.CANCEL_INTERVIEW
+      : LOG_ACTION.UPDATE_INTERVIEW,
+    targetType: LOG_TARGET_TYPE.INTERVIEW,
+    targetId: interview._id,
+  });
 
   const jobTitle = (interview.job as unknown as { title: string }).title;
 
