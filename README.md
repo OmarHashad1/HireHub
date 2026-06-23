@@ -55,8 +55,13 @@ Implemented in the current backend:
   - Create, partial-update, delete jobs; ownership enforced via the owning company.
   - Status transitions through dedicated endpoints: **publish** (`DRAFT → PUBLISHED`) and **close** (`PUBLISHED → CLOSED`), governed by a state machine.
   - Public reads for published jobs (all, by id, by company).
+- **Job applications** — candidates apply to published jobs (CV uploaded, or snapshotted from their profile CV), with one-application-per-job enforced by a unique index; view, withdraw, and (for companies) list and status-manage applicants.
+- **AI résumé scoring (Google Gemini)** — on application, the candidate's CV is parsed from PDF and scored against the job; the result (`aiRating` 0–100 + reasoning) is stored, and when the recruiter enables **`autoReject`** with an `aiThreshold`, below-threshold candidates are auto-rejected (with FCM + audit log). Runs in the background so the apply request stays fast.
+- **Interviews** — companies schedule, reschedule, cancel, and complete interviews; applicants are notified via FCM.
+- **Saved jobs** — candidates bookmark and list job listings (unique per user/job).
+- **Reports** — candidates report companies and companies report users.
 - **User profiles** — avatar, CV, experience and education entries, public/private profile views.
-- **File uploads** — Multer + AWS S3, with presigned, ownership-checked download URLs.
+- **File uploads** — Multer + AWS S3, with presigned, ownership-checked download URLs (avatars, profile CVs, application CVs, and company verification documents).
 - **Push notifications** — Firebase Cloud Messaging (FCM) via `firebase-admin`.
 - **Transactional email** — SMTP via Nodemailer.
 - **Audit logging** — business actions persisted to MongoDB (30-day TTL) alongside server logs.
@@ -65,13 +70,8 @@ Implemented in the current backend:
 
 ## Roadmap
 
-Models and/or dependencies for these exist; the modules are not yet wired up:
+Dependencies/reserved folders exist; not yet wired up:
 
-- **Applications** — candidates applying to jobs (`application` model present).
-- **Saved jobs** — bookmarking listings (`savedJob` model present).
-- **Interviews** — scheduling between companies and candidates (`interview` model present).
-- **Reports** — flagging jobs/users (`report` model present).
-- **AI résumé scanning & ATS matching** — scoring candidates against a job's `aiThreshold` (OpenAI SDK installed).
 - **Scheduled jobs** — e.g. auto-expiring listings past their deadline (`node-cron` installed; `jobs/` reserved).
 - **Frontend client** — `client/` is reserved for the web app.
 
@@ -87,6 +87,7 @@ Models and/or dependencies for these exist; the modules are not yet wired up:
 | Cache / sessions / OTP | Redis |
 | Auth | JSON Web Tokens, Argon2, Passport (Google OAuth 2.0) |
 | Validation | Zod 4 |
+| AI | Google Gemini (`@google/genai`); `pdf-parse` for CV text extraction |
 | File storage | AWS S3 (`@aws-sdk/client-s3` + presigner), Multer |
 | Email | Nodemailer (SMTP) |
 | Push notifications | Firebase Admin (FCM) |
@@ -106,7 +107,7 @@ HireHub uses a strict **layered architecture**. Each request flows through clear
 - **Middleware** — security headers, CORS, rate limiting, JWT auth, RBAC, and Zod validation of body/params/query/files.
 - **Routers** — map paths (centralized in `routes.ts`) to controllers and attach middleware.
 - **Controllers** — translate HTTP ⇄ service calls; on error, delegate to a global error handler via `next(err)`.
-- **Services** — business logic and orchestration across DB, Redis, S3, email, and FCM.
+- **Services** — business logic and orchestration across DB, Redis, S3, email, FCM, and the Gemini AI scorer.
 - **Repositories** — a typed `DatabaseRepo<T>` base (`create`, `findOne`, `find`, `paginate`, `updateOne`, `deleteOne`) wrapping Mongoose.
 - **Models** — Mongoose schemas, each backed by a TypeScript interface and string enums.
 
@@ -179,12 +180,12 @@ Exported from `server/src/models/index.ts` (always import from there):
 | `userModel` | Job seekers, company recruiters, and admins (role field) | ✅ |
 | `companyApplicationModel` | Pending/approved/rejected verification submissions | ✅ |
 | `companyModel` | Verified companies | ✅ |
-| `jobModel` | Job listings + lifecycle status | ✅ |
+| `jobModel` | Job listings + lifecycle status + `aiThreshold` / `autoReject` | ✅ |
 | `logModel` | Activity audit log (TTL 30 days) | ✅ |
-| `applicationModel` | Candidate applications to jobs | 🚧 model only |
-| `savedJobModel` | Bookmarked jobs | 🚧 model only |
-| `interviewModel` | Interview scheduling | 🚧 model only |
-| `reportModel` | Abuse/spam reports | 🚧 model only |
+| `applicationModel` | Candidate applications to jobs (+ `aiRating` / `aiNotes` / `autoRejected`) | ✅ |
+| `savedJobModel` | Bookmarked jobs | ✅ |
+| `interviewModel` | Interview scheduling | ✅ |
+| `reportModel` | Abuse/spam reports | ✅ |
 
 ---
 
@@ -204,7 +205,8 @@ HireHub/
         ├── DB/             # Mongoose + Redis services, Pino→Mongo transport
         ├── models/         # Mongoose models (+ index re-export)
         ├── middlewares/    # auth, checkRole, validate, file access, error handler
-        ├── modules/        # auth · user · company · job (router/controller/service)
+        ├── modules/        # auth · user · company · job · application · saved-job · report · interview · Gemini
+        ├── events/         # notification (FCM) + email event emitters
         ├── repositories/   # DatabaseRepo<T> base + per-model repos
         ├── schemas/        # Zod validation schemas
         ├── utils/          # tokens, encryption, S3, multer, smtp, logger, ...
@@ -269,6 +271,9 @@ All consumed from `server/configs/env.config.ts`, selected by `NODE_ENV`.
 | Encryption | `ENCRYPTION_SECRET`, `ENCRYPTION_IV_LENGTH`, `ENCRYPTION_ALGORITHM` |
 | Google OAuth | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL` |
 | AWS S3 | `AWS_REGION`, `AWS_ACCESSS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_EXPIRATION`, `AWS_BUCKET_NAME` |
+| AI (Gemini) | `GEMINI_API_KEY`, `GEMINI_MODEL` |
+
+> FCM also requires a Firebase service-account JSON at the project root (git-ignored).
 
 > Note: `AWS_ACCESSS_KEY_ID` is spelled with three S's intentionally — it matches the env var the code reads.
 
@@ -283,7 +288,11 @@ Base route groups (mounted in `app.ts`):
 | `/auth` | Authentication | signup, login, Google OAuth, verify email, refresh, forgot/reset/change password |
 | `/user` | User profiles | profile, avatar, CV, experience, education, change email, delete account |
 | `/company` | Companies | submit application, profile, admin approval, company jobs |
-| `/job` | Jobs | public reads; company create / update / delete / **publish** / **close** |
+| `/job` | Jobs | public reads; company create / update / delete / **publish** / **close**; apply (`/:id/application`); list applicants |
+| `/application` | Applications | my applications, single application, withdraw, company status update |
+| `/save` | Saved jobs | save, unsave, list (user) |
+| `/report` | Reports | report a company (user); report a user (company) |
+| `/interview` | Interviews | schedule, list company interviews, update/reschedule/cancel/complete (company) |
 | `/uploads/*path` | File access | auth + ownership-checked presigned S3 URLs |
 
 A full route-by-route reference lives in [`CLAUDE.md`](./CLAUDE.md).
