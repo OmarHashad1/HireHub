@@ -2,9 +2,13 @@ import { NextFunction, Request, Response } from "express";
 import {
   getCompanyInterviews,
   scheduleInterview,
+  updateScheduledInterview,
 } from "./interview.service.js";
 import { IUser } from "../../types/user.types.js";
-import { scheduleInterviewDTO } from "../../schemas/interview.schema.js";
+import {
+  scheduleInterviewDTO,
+  updateScheduledInterviewDTO,
+} from "../../schemas/interview.schema.js";
 import { successRes } from "../../utils/response.util.js";
 import { StatusCodes } from "http-status-codes";
 import { paginationQueryDTO } from "../../schemas/global.schema.js";
@@ -46,6 +50,27 @@ export const getCompanyInterviewsController = async (
       message: "Company interviews fetched successfully",
       status: StatusCodes.OK,
       data,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateScheduledInterviewController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    await updateScheduledInterview(
+      req.user as IUser,
+      req.params.id as string,
+      req.body as updateScheduledInterviewDTO,
+    );
+    successRes({
+      res,
+      message: "Interview has been updated successfully",
+      status: StatusCodes.OK,
     });
   } catch (err) {
     next(err);

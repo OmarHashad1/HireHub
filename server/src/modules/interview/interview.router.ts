@@ -6,9 +6,13 @@ import { ROLE } from "../../enums/user.enums.js";
 import {
   getCompanyInterviewsController,
   scheduleInterviewController,
+  updateScheduledInterviewController,
 } from "./interview.controller.js";
 import { validate } from "../../middlewares/validate.middleware.js";
-import { scheduleInterviewSchema } from "../../schemas/interview.schema.js";
+import {
+  scheduleInterviewSchema,
+  updateScheduledInterviewSchema,
+} from "../../schemas/interview.schema.js";
 import { objectIdParamSchema } from "../../schemas/user.schema.js";
 import { paginationQuerySchema } from "../../schemas/global.schema.js";
 
@@ -30,4 +34,15 @@ interviewRouter.get(
   checkRole([ROLE.COMPANY]),
   validate({ params: objectIdParamSchema, query: paginationQuerySchema }),
   getCompanyInterviewsController,
+);
+
+interviewRouter.patch(
+  ROUTES.INTERVIEW.INTERVIEW_ITEM,
+  auth,
+  checkRole([ROLE.COMPANY]),
+  validate({
+    body: updateScheduledInterviewSchema,
+    params: objectIdParamSchema,
+  }),
+  updateScheduledInterviewController
 );

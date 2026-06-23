@@ -1,12 +1,16 @@
-import mongoose, { Types } from "mongoose";
+import mongoose, { Types, UpdateQuery } from "mongoose";
 import { APPLICATION_STATUS } from "../../enums/application.enums.js";
 import { COMPANY_STATUS } from "../../enums/company.enums.js";
 import { ApplicationRepo } from "../../repositories/application.repo.js";
 import { CompanyRepo } from "../../repositories/company.repo.js";
 import { InterviewRepo } from "../../repositories/interview repo.js";
-import { scheduleInterviewDTO } from "../../schemas/interview.schema.js";
+import {
+  scheduleInterviewDTO,
+  updateScheduledInterviewDTO,
+} from "../../schemas/interview.schema.js";
 import { IUser } from "../../types/user.types.js";
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenExceptions,
   NotFoundException,
@@ -20,6 +24,8 @@ import {
   NOTIFICATION_EVENTS,
 } from "../../events/notification.events.js";
 import { paginationQueryDTO } from "../../schemas/global.schema.js";
+import { INTERVIEW_STATUS } from "../../enums/interview.enums.js";
+import { IInterview } from "../../types/inteview.types.js";
 
 const interviewRepo = new InterviewRepo();
 const applicationRepo = new ApplicationRepo();
@@ -174,4 +180,86 @@ export const getCompanyInterviews = async (
     size: paginatedto.size,
   });
   return interviews;
+};
+
+export const updateScheduledInterview = async (
+  user: IUser,
+  interviewId: string,
+  dto: updateScheduledInterviewDTO,
+) => {
+  const interview = await interviewRepo.findOne({
+    filter: { _id: interviewId },
+    options: {
+      lean: true,
+      populate: [
+        {
+          path: "company",
+          select: { owner: 1 },
+        },
+        { path: "job", select: "title" },
+      ],
+    },
+  });
+
+  if (!interview)
+    throw new NotFoundException(`No interview found with id ${interviewId}`);
+
+  if (
+    !(interview.company as unknown as { owner: Types.ObjectId }).owner.equals(
+      user._id,
+    )
+  )
+    throw new ForbiddenExceptions(
+      "You don't have permission to update this interview because it belongs to another company",
+    );
+  if (interview.status != INTERVIEW_STATUS.SCHEDULED)
+    throw new ConflictException(
+      `Only interviews with status ${INTERVIEW_STATUS.SCHEDULED} can be updated; this interview is ${interview.status}`,
+    );
+
+  if (dto.status === INTERVIEW_STATUS.CANCELLED && !dto.cancellationReason) {
+    throw new BadRequestException(
+      "A cacellation reason is required when cancelling an interview",
+    );
+  }
+  if (
+    dto.scheduledAt &&
+    new Date(dto.scheduledAt).getTime() == interview.scheduledAt.getTime()
+  )
+    throw new BadRequestException(
+      "The new schedule must be different from the current schedule",
+    );
+
+  if (dto.type && dto.type == interview.type)
+    throw new BadRequestException(
+      "Interview type must be different from the current type",
+    );
+
+  const update: UpdateQuery<IInterview> = {
+    ...(dto.status && { status: dto.status }),
+    ...(dto.cancellationReason && {
+      cancellationReason: dto.cancellationReason,
+    }),
+    ...(dto.scheduledAt && { scheduledAt: dto.scheduledAt }),
+    ...(dto.type && { type: dto.type }),
+  };
+
+  await interviewRepo.updateOne({ filter: { _id: interview._id }, update });
+
+  const jobTitle = (interview.job as unknown as { title: string }).title;
+
+  if (dto.status === INTERVIEW_STATUS.CANCELLED)
+    notificationEmitter.emit(NOTIFICATION_EVENTS.INTERVIEW_CANCELLED, {
+      userId: interview.applicant,
+      jobTitle,
+    });
+
+  if (dto.scheduledAt)
+    notificationEmitter.emit(NOTIFICATION_EVENTS.INTERVIEW_RESCHEDULED, {
+      userId: interview.applicant,
+      jobTitle,
+      scheduledAt: dto.scheduledAt,
+    });
+
+  return;
 };

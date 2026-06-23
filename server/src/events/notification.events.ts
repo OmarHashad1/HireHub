@@ -8,6 +8,9 @@ export const NOTIFICATION_EVENTS = {
   APPLICATION_RECEIVED: "notification.application-received",
   COMPANY_APPLICATION_DECISION: "notification.company-application-decision",
   INTERVIEW_SCHEDULED: "notification.interview-scheduled",
+  INTERVIEW_RESCHEDULED: "notification.interview-rescheduled",
+
+  INTERVIEW_CANCELLED: "notification.interview-cancelled",
 } as const;
 
 export interface NotificationEventPayloads {
@@ -25,6 +28,15 @@ export interface NotificationEventPayloads {
   };
   [NOTIFICATION_EVENTS.INTERVIEW_SCHEDULED]: {
     userId: Types.ObjectId;
+    scheduledAt: Date;
+  };
+  [NOTIFICATION_EVENTS.INTERVIEW_CANCELLED]: {
+    userId: Types.ObjectId;
+    jobTitle: string;
+  };
+  [NOTIFICATION_EVENTS.INTERVIEW_RESCHEDULED]: {
+    userId: Types.ObjectId;
+    jobTitle: string;
     scheduledAt: Date;
   };
 }
@@ -46,7 +58,6 @@ class NotificationEmitter extends EventEmitter {
 }
 
 export const notificationEmitter = new NotificationEmitter();
-
 
 const safeSend = async (
   userId: Types.ObjectId,
@@ -105,6 +116,33 @@ notificationEmitter.on(
       userId,
       "Interview scheduled",
       `An interview has been scheduled for ${when}.`,
+    );
+  },
+);
+
+notificationEmitter.on(
+  NOTIFICATION_EVENTS.INTERVIEW_CANCELLED,
+  async ({ userId, jobTitle }) => {
+    await safeSend(
+      userId,
+      "Interview Cancelled",
+      `The interview for ${jobTitle} has been cancelled. Check your interviews section for details`,
+    );
+  },
+);
+
+notificationEmitter.on(
+  NOTIFICATION_EVENTS.INTERVIEW_RESCHEDULED,
+  async ({ userId, jobTitle, scheduledAt }) => {
+    const when = scheduledAt.toLocaleString("en-US", {
+      dateStyle: "long",
+      timeStyle: "short",
+      timeZone: "Africa/Cairo",
+    });
+    await safeSend(
+      userId,
+      "Interview Cancelled",
+      `The interview for ${jobTitle} has been reschedules at ${when}. Check your interviews section for details`,
     );
   },
 );
