@@ -5,6 +5,7 @@ import { checkRole } from "../../middlewares/checkRole.middleware.js";
 import { ROLE } from "../../enums/user.enums.js";
 import {
   getCompanyInterviewsController,
+  getUserInterviewsController,
   scheduleInterviewController,
   updateScheduledInterviewController,
 } from "./interview.controller.js";
@@ -26,6 +27,14 @@ interviewRouter.post(
     body: scheduleInterviewSchema,
   }),
   scheduleInterviewController,
+);
+
+interviewRouter.get(
+  ROUTES.INTERVIEW.USER_INTERVIEWS,
+  auth,
+  checkRole([ROLE.USER]),
+  validate({ query: paginationQuerySchema }),
+  getUserInterviewsController,
 );
 
 interviewRouter.get(

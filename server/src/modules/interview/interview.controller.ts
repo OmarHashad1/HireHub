@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import {
   getCompanyInterviews,
+  getUserInterviews,
   scheduleInterview,
   updateScheduledInterview,
 } from "./interview.service.js";
@@ -48,6 +49,27 @@ export const getCompanyInterviewsController = async (
     successRes({
       res,
       message: "Company interviews fetched successfully",
+      status: StatusCodes.OK,
+      data,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getUserInterviewsController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const data = await getUserInterviews(
+      req.user as IUser,
+      req.query as unknown as paginationQueryDTO,
+    );
+    successRes({
+      res,
+      message: "Interviews fetched successfully",
       status: StatusCodes.OK,
       data,
     });

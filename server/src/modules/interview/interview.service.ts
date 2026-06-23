@@ -191,6 +191,23 @@ export const getCompanyInterviews = async (
   return interviews;
 };
 
+export const getUserInterviews = async (
+  user: IUser,
+  { page, size }: paginationQueryDTO,
+) => {
+  const interviews = await interviewRepo.paginate({
+    filter: {
+      applicant: user._id,
+    },
+    options: {
+      lean: true,
+    },
+    page,
+    size,
+  });
+  return interviews;
+};
+
 export const updateScheduledInterview = async (
   user: IUser,
   interviewId: string,
