@@ -7,4 +7,5 @@ export enum INTERVIEW_STATUS {
   SCHEDULED = "scheduled",
   COMPLETED = "completed",
   CANCELLED = "cancelled",
+  MISSED = "missed",
 }

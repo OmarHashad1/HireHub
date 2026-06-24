@@ -1,6 +1,8 @@
 import express, { Express, NextFunction, Request, Response } from "express";
 import { CLIENT_URL, PORT } from "./configs/env.config.js";
 import helmet from "helmet";
+import "./jobs/jobs.cron.js";
+import "./jobs/interview.cron.js";
 import { globalErrorHandler } from "./middlewares/globalErrorHandler.middleware.js";
 import { NotFoundException } from "./utils/errorHandler.util.js";
 import { DBService } from "./DB/DatabaseService.js";
