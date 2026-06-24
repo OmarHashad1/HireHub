@@ -7,6 +7,7 @@ import {
   companyReportDTO,
   userReportDTO,
 } from "../../schemas/report.schema.js";
+import { paginationQueryDTO } from "../../schemas/global.schema.js";
 import { IUser } from "../../types/user.types.js";
 import {
   BadRequestException,
@@ -70,6 +71,33 @@ export const reportCompany = async (
   });
 
   return report;
+};
+
+export const getCompanyReports = async (
+  companyUser: IUser,
+  dto: paginationQueryDTO,
+) => {
+  return reportRepo.paginate({
+    filter: {
+      reportedBy: companyUser._id,
+      targetType: REPORT_TARGET_TYPE.USER,
+    },
+    options: { lean: true },
+    page: dto.page,
+    size: dto.size,
+  });
+};
+
+export const getUserReports = async (
+  user: IUser,
+  dto: paginationQueryDTO,
+) => {
+  return reportRepo.paginate({
+    filter: { reportedBy: user._id, targetType: REPORT_TARGET_TYPE.COMPANY },
+    options: { lean: true },
+    page: dto.page,
+    size: dto.size,
+  });
 };
 
 export const reportUser = async (

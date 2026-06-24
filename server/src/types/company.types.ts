@@ -36,7 +36,7 @@ export interface ICompany extends Document {
   benefits: COMPANY_BENEFIT[];
   socialMedia?: ICompanySocialMedia;
   status: COMPANY_STATUS;
-  suspend_reason?: string | null;
+  suspendReason?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

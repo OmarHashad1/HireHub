@@ -63,6 +63,8 @@ export const ROUTES = {
     BASE: "/report",
     REPORT_COMPANY: "/company/:id",
     REPORT_USER: "/user/:id",
+    COMPANY_REPORTS: "/company",
+    USER_REPORTS: "/user",
   },
   INTERVIEW: {
     BASE: "/interview",
@@ -74,6 +76,18 @@ export const ROUTES = {
   ADMIN: {
     BASE: "/admin",
     LIST_USERS: "/users",
-    USER:"/user/:id",
+    USER:"/users/:id",
+    LIST_COMPANY_APPLICATIONS: "/company-applications",
+    COMPANY_APPLICATION_ITEM: "/company-applications/:id",
+    LIST_COMPANIES: "/companies",
+    COMPANY_ITEM: "/companies/:id",
+    LIST_JOBS: "/jobs",
+    JOB_ITEM: "/jobs/:id",
+    LIST_APPLICATIONS: "/applications",
+    APPLICATION_ITEM: "/applications/:id",
+    LIST_REPORTS: "/reports",
+    REPORT_ITEM: "/reports/:id",
+    LIST_LOGS: "/logs",
+    STATS: "/stats",
   },
 } as const;

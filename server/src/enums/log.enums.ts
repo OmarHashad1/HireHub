@@ -38,6 +38,8 @@ export enum LOG_ACTION {
   UNBAN_COMPANY = "unban_company",
 
   FORCE_CLOSE_JOB = "force_close_job",
+  FLAG_JOB = "flag_job",
+  UNFLAG_JOB = "unflag_job",
   DELETE_JOB = "delete_job",
 
   RESOLVE_REPORT = "resolve_report",

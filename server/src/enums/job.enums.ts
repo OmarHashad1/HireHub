@@ -3,7 +3,8 @@ export enum JOB_STATUS {
   PUBLISHED = "published",
   CLOSED = "closed",
   EXPIRED = "expired",
-  SUSPENDED="suspended"
+  SUSPENDED = "suspended",
+  FLAGGED = "flagged",
 }
 
 export enum JOB_TYPE {

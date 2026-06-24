@@ -57,7 +57,7 @@ const companySchema = new Schema<ICompany>(
       enum: [...Object.values(COMPANY_STATUS)],
       default: COMPANY_STATUS.ACTIVE,
     },
-    suspend_reason: {
+    suspendReason: {
       type: String,
       required: function (this: ICompany) {
         return this.status === COMPANY_STATUS.SUSPENDED;

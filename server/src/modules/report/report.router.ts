@@ -9,7 +9,10 @@ import {
   userReportSchema,
 } from "../../schemas/report.schema.js";
 import { objectIdParamSchema } from "../../schemas/user.schema.js";
+import { paginationQuerySchema } from "../../schemas/global.schema.js";
 import {
+  getCompanyReportsController,
+  getUserReportsController,
   reportCompanyController,
   reportUserController,
 } from "./report.controller.js";
@@ -36,4 +39,20 @@ reportRouter.post(
     params: objectIdParamSchema,
   }),
   reportUserController,
+);
+
+reportRouter.get(
+  ROUTES.REPORT.COMPANY_REPORTS,
+  auth,
+  checkRole([ROLE.COMPANY]),
+  validate({ query: paginationQuerySchema }),
+  getCompanyReportsController,
+);
+
+reportRouter.get(
+  ROUTES.REPORT.USER_REPORTS,
+  auth,
+  checkRole([ROLE.USER]),
+  validate({ query: paginationQuerySchema }),
+  getUserReportsController,
 );
