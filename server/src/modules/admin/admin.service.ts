@@ -14,6 +14,7 @@ import {
 import { EMAIL_EVENTS, emailEmitter } from "../../events/email.events.js";
 import {
   BadRequestException,
+  ConflictException,
   NotFoundException,
 } from "../../utils/errorHandler.util.js";
 import { updateCompanyApplicationStatusDTO } from "../../schemas/company.schema.js";
@@ -196,7 +197,16 @@ export const updateUserStatus = async (
       `User with id ${userId} not found or can't it's information can't be fetched`,
     );
 
+  const requiredStatus: Partial<Record<USER_STATUS, USER_STATUS>> = {
+    [USER_STATUS.ACTIVE]: USER_STATUS.BANNED,
+    [USER_STATUS.BANNED]: USER_STATUS.ACTIVE,
+  };
 
+  if (user.status != requiredStatus[dto.status]) {
+    throw new ConflictException(
+      `Can't set the status of the user from ${user.status} to ${dto.status}`,
+    );
+  }
 
   const update: UpdateQuery<IUser> =
     dto.status === USER_STATUS.ACTIVE
