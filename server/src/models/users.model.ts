@@ -147,6 +147,10 @@ export const userSchema = new Schema<IUser>(
       type: Date,
       default: null,
     },
+    banReason: {
+      type: String,
+      default: null,
+    },
     deletedAt: {
       type: Date,
     },

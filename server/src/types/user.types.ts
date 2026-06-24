@@ -55,6 +55,7 @@ export interface IUser extends Document {
   education: IUserEducation[];
   isEmailVerified: boolean;
   status: string;
+  banReason: string | null;
   credentialsChangedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;

@@ -1,10 +1,9 @@
 import { COMPANY_APPLICATION_STATUS } from "./../../enums/companyApplication.enums.js";
-import mongoose, { Types, UpdateQuery } from "mongoose";
+import { Types, UpdateQuery } from "mongoose";
 import { CompanyApplicationRepo } from "../../repositories/companyApplication.repo.js";
 import { ICompanyApplication } from "../../types/companyApplication.types.js";
 import { encrypt } from "../../utils/encryption.util.js";
 import {
-  BadRequestException,
   ConflictException,
   ForbiddenExceptions,
   InternalServerErrorException,
@@ -16,15 +15,9 @@ import { CompanyRepo } from "../../repositories/company.repo.js";
 import { COMPANY_STATUS } from "../../enums/company.enums.js";
 import {
   getCompanyJobsDTO,
-  updateCompanyApplicationStatusDTO,
   updateCompanyProfileDTO,
 } from "../../schemas/company.schema.js";
-import { emailEmitter, EMAIL_EVENTS } from "../../events/email.events.js";
-import {
-  notificationEmitter,
-  NOTIFICATION_EVENTS,
-} from "../../events/notification.events.js";
-import { generatePassword } from "../../utils/generatePasssword.util.js";
+
 import { UserRepo } from "../../repositories/user.repo.js";
 import { ROLE } from "../../enums/user.enums.js";
 import { JobRepo } from "../../repositories/job.repo.js";
@@ -197,136 +190,6 @@ export const updateCompanyProfile = async (
   });
 
   return result;
-};
-
-export const updateCompanyApplicationStatus = async (
-  admin: IUser,
-  dto: updateCompanyApplicationStatusDTO,
-) => {
-  const application = await applicationRepo.findOne({
-    filter: { _id: dto.applicationID },
-    options: { lean: false },
-  });
-  if (!application) throw new NotFoundException("Application not found");
-
-  if (
-    application.status == COMPANY_APPLICATION_STATUS.APPROVED ||
-    application.status == COMPANY_APPLICATION_STATUS.REJECTED
-  )
-    throw new BadRequestException(
-      "Company Application stauts can not modified after approval or rejection",
-    );
-
-  const submitter = await userRepo.findOne({
-    filter: { _id: application.submittedBy },
-    options: { lean: true },
-  });
-  if (!submitter) {
-    await applicationRepo.deleteOne({ filter: { _id: application._id } });
-    throw new NotFoundException("Submitter account no longer exists");
-  }
-  if (dto.status === COMPANY_APPLICATION_STATUS.REJECTED) {
-    await applicationRepo.updateOne({
-      filter: { _id: application._id },
-      update: {
-        status: COMPANY_APPLICATION_STATUS.REJECTED,
-        rejectionReason: dto.rejectionReason,
-        reviewedBy: admin._id,
-        reviewedAt: new Date(),
-      },
-    });
-    emailEmitter.emit(EMAIL_EVENTS.APPLICATION_STATUS_UPDATE, {
-      to: application.companyEmail,
-      status: dto.status,
-      rejectionReason: dto.rejectionReason,
-    });
-
-    notificationEmitter.emit(NOTIFICATION_EVENTS.COMPANY_APPLICATION_DECISION, {
-      userId: submitter._id,
-      status: dto.status,
-    });
-
-    activityLogger.info({
-      event: "company.application.rejected",
-      actor: admin._id,
-      email: admin.email,
-      action: LOG_ACTION.REJECT_COMPANY_APPLICATION,
-      targetType: LOG_TARGET_TYPE.COMPANY_APPLICATION,
-      targetId: application._id,
-    });
-    return;
-  } else {
-    const tempPassword = generatePassword();
-
-    const session = await mongoose.startSession();
-    let recruiter;
-    try {
-      await session.withTransaction(async () => {
-        recruiter = await userRepo.create({
-          data: {
-            firstName: submitter.firstName,
-            lastName: submitter.lastName,
-            email: application.companyEmail,
-            password: tempPassword,
-            phoneNumber: application.contactPhone,
-            role: ROLE.COMPANY,
-            isEmailVerified: true,
-          },
-          options: { session },
-        });
-        await companyRepo.create({
-          data: {
-            owner: recruiter,
-            companyApplication: application._id,
-            name: application.companyName,
-            email: application.companyEmail,
-            industry: application.industry,
-            size: application.size,
-            location: application.location,
-            description: application.description,
-            documents: application.documents,
-            website: application.website ?? null,
-            foundedAt: application.foundedAt ?? null,
-            socialMedia: {
-              linkedin: application.linkedin ?? null,
-            },
-            status: COMPANY_STATUS.ACTIVE,
-          },
-          options: { session },
-        });
-        await applicationRepo.updateOne({
-          filter: { _id: application._id },
-          update: {
-            status: COMPANY_APPLICATION_STATUS.APPROVED,
-            reviewedBy: admin._id,
-            reviewedAt: new Date(),
-          },
-          options: { session },
-        });
-      });
-    } finally {
-      session.endSession();
-    }
-    emailEmitter.emit(EMAIL_EVENTS.COMPANY_ACCOUNT_CREATED, {
-      to: application.companyEmail,
-      email: application.companyEmail,
-      password: tempPassword,
-    });
-
-    notificationEmitter.emit(NOTIFICATION_EVENTS.COMPANY_APPLICATION_DECISION, {
-      userId: submitter._id,
-      status: dto.status,
-    });
-
-    activityLogger.info({
-      event: "company.application.approved",
-      actor: admin._id,
-      email: admin.email,
-      action: LOG_ACTION.APPROVE_COMPANY_APPLICATION,
-      targetType: LOG_TARGET_TYPE.COMPANY_APPLICATION,
-      targetId: application._id,
-    });
-  }
 };
 
 export const getCompanyJobs = async (

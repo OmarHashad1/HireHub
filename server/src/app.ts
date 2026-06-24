@@ -24,6 +24,7 @@ import { applicationRouter } from "./modules/application/application.router.js";
 import { savedJobRouter } from "./modules/saved-job/savedJobs.router.js";
 import { reportRouter } from "./modules/report/report.router.js";
 import { interviewRouter } from "./modules/interview/interview.router.js";
+import { adminRouter } from "./modules/admin/admin.router.js";
 
 export const app = async () => {
   const APP: Express = express();
@@ -56,6 +57,7 @@ export const app = async () => {
   APP.use(ROUTES.SAVED_JOB.BASE, savedJobRouter);
   APP.use(ROUTES.REPORT.BASE, reportRouter);
   APP.use(ROUTES.INTERVIEW.BASE, interviewRouter);
+  APP.use(ROUTES.ADMIN.BASE, adminRouter);
   APP.all("/{*dummy}", (_req: Request, _res: Response, next: NextFunction) => {
     next(new NotFoundException());
   });

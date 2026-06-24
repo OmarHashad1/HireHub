@@ -64,12 +64,16 @@ export const ROUTES = {
     REPORT_COMPANY: "/company/:id",
     REPORT_USER: "/user/:id",
   },
-  INTERVIEW:{
-    BASE:"/interview",
-    ROOT:"/",
-    USER_INTERVIEWS:"/me",
-    COMPANY_INTERVIEW:"/:id",
-    INTERVIEW_ITEM:"/:id",
-
-  }
+  INTERVIEW: {
+    BASE: "/interview",
+    ROOT: "/",
+    USER_INTERVIEWS: "/me",
+    COMPANY_INTERVIEW: "/:id",
+    INTERVIEW_ITEM: "/:id",
+  },
+  ADMIN: {
+    BASE: "/admin",
+    LIST_USERS: "/users",
+    USER:"/user/:id",
+  },
 } as const;

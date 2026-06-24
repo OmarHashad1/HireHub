@@ -3,7 +3,6 @@ import {
   companyApplication,
   companyProfile,
   getCompanyJobs,
-  updateCompanyApplicationStatus,
   updateCompanyProfile,
 } from "./company.service.js";
 import { successRes } from "../../utils/response.util.js";
@@ -12,7 +11,6 @@ import { ICompanyApplication } from "../../types/companyApplication.types.js";
 import { IUser } from "../../types/user.types.js";
 import {
   getCompanyJobsDTO,
-  updateCompanyApplicationStatusDTO,
   updateCompanyProfileDTO,
 } from "../../schemas/company.schema.js";
 import { paginationQueryDTO } from "../../schemas/global.schema.js";
@@ -79,25 +77,6 @@ export const updateCompanyProfileController = async (
   }
 };
 
-export const updateCompanyApplicationStatusController = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    await updateCompanyApplicationStatus(
-      req.user as IUser,
-      req.body as updateCompanyApplicationStatusDTO,
-    );
-    successRes({
-      res,
-      message: "Application status updated successfully",
-      status: StatusCodes.OK,
-    });
-  } catch (err) {
-    next(err);
-  }
-};
 
 export const getCompanyJobsController = async (
   req: Request,

@@ -77,7 +77,7 @@ export const login = async (dto: loginDTO) => {
       password: 1,
       email: 1,
       firstName: 1,
-      isEmailVerified:1
+      isEmailVerified: 1,
     },
     options: { lean: true },
   });
@@ -97,10 +97,7 @@ export const login = async (dto: loginDTO) => {
     throw new InternalServerErrorException();
   }
 
-  if (
-    user.status == USER_STATUS.BANNED ||
-    user.status == USER_STATUS.DEACTIVATED
-  ) {
+  if (user.status == USER_STATUS.BANNED || user.status == USER_STATUS.DELETED) {
     activityLogger.warn({
       action: LOG_ACTION.BLOCK_LOGIN,
       actor: user._id,
@@ -111,6 +108,20 @@ export const login = async (dto: loginDTO) => {
     });
     throw new UnauthorizedException(
       "Your account has been suspended. Please contact support.",
+    );
+  }
+
+  if (user.status == USER_STATUS.DELETED) {
+    activityLogger.warn({
+      action: LOG_ACTION.BLOCK_LOGIN,
+      actor: user._id,
+      email: user.email,
+      status: user.status,
+      targetType: LOG_TARGET_TYPE.USER,
+      targetId: user._id,
+    });
+    throw new UnauthorizedException(
+      "This account has been deleted and can not be used again",
     );
   }
   if (!user.isEmailVerified) {

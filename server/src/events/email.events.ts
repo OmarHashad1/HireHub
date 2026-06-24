@@ -11,6 +11,8 @@ export const EMAIL_EVENTS = {
   APPLICATION_STATUS_UPDATE: "email.application-status-update",
   COMPANY_ACCOUNT_CREATED: "email.company-account-created",
   REPORT_RECEIVED: "email.report-received",
+  ACCOUNT_BAN: "email.account-ban",
+  ACCOUNT_ACTIVE: "email.account-active",
 } as const;
 
 export interface EmailEventPayloads {
@@ -20,6 +22,8 @@ export interface EmailEventPayloads {
   [EMAIL_EVENTS.CHANGE_EMAIL]: { to: string; otp: string };
   [EMAIL_EVENTS.DELETE_ACCOUNT]: { to: string; otp: string };
   [EMAIL_EVENTS.APPLICATION_RECEIVED]: { to: string };
+  [EMAIL_EVENTS.ACCOUNT_BAN]: { to: string; banReason: string };
+  [EMAIL_EVENTS.ACCOUNT_ACTIVE]: { to: string };
   [EMAIL_EVENTS.APPLICATION_STATUS_UPDATE]: {
     to: string;
     status: string;
@@ -118,5 +122,21 @@ emailEmitter.on(EMAIL_EVENTS.REPORT_RECEIVED, async ({ to, targetType }) => {
     to,
     subject: "Report Received",
     html: `<h1>We received your report</h1><p>Your report against this ${targetType} has been submitted and is now pending review by our team.</p>`,
+  });
+});
+
+emailEmitter.on(EMAIL_EVENTS.ACCOUNT_BAN, async ({ to, banReason }) => {
+  await sendMail({
+    to,
+    subject: "Report Received",
+    html: `<h1>Your account has been suspended</h1><br/><p>Ban Reason:${banReason}</p><br/><p>Please contact our support for more details</p>`,
+  });
+});
+
+emailEmitter.on(EMAIL_EVENTS.ACCOUNT_ACTIVE, async ({ to }) => {
+  await sendMail({
+    to,
+    subject: "Report Received",
+    html: `<h1>Your account has been activated again</h1>`,
   });
 });

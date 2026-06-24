@@ -20,7 +20,7 @@ export enum EDUCATION_LEVEL {
 
 export enum USER_STATUS {
   ACTIVE = "active",
-  DEACTIVATED = "deativated",
+  DELETED = "deleted",
   BANNED = "BANNED",
 }
 

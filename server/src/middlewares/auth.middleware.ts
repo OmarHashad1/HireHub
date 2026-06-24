@@ -26,13 +26,18 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
       throw new BadRequestException("User account must be verified first");
     }
 
-    if (
-      user.status == USER_STATUS.BANNED ||
-      user.status == USER_STATUS.DEACTIVATED
-    ) {
+    if (user.status == USER_STATUS.BANNED) {
       return errorRes({
         res,
         message: "Your account has been suspended. Please contact support.",
+        status: StatusCodes.FORBIDDEN,
+      });
+    }
+
+    if (user.status == USER_STATUS.DELETED) {
+      return errorRes({
+        res,
+        message: "This account has been deleted and can not be used again",
         status: StatusCodes.FORBIDDEN,
       });
     }

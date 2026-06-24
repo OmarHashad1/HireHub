@@ -4,7 +4,6 @@ import {
   companyApplicationSchema,
   companyApplicationFileFieldsSchema,
   updateCompanyProfileSchema,
-  updateCompanyApplicationStatusSchema,
   getCompanyJobsSchema,
 } from "../../schemas/company.schema.js";
 import { validate } from "../../middlewares/validate.middleware.js";
@@ -12,7 +11,6 @@ import {
   companyApplicationController,
   companyProfileController,
   getCompanyJobsController,
-  updateCompanyApplicationStatusController,
   updateCompanyProfileController,
 } from "./company.controller.js";
 import { uploadApplicationDoc } from "../../utils/multer.utils.js";
@@ -51,14 +49,6 @@ companyRouter.patch(
   checkRole([ROLE.COMPANY]),
   validate({ body: updateCompanyProfileSchema }),
   updateCompanyProfileController,
-);
-
-companyRouter.patch(
-  ROUTES.COMPANY.COMPANY_APPLLICATION,
-  auth,
-  checkRole([ROLE.ADMIN]),
-  validate({ body: updateCompanyApplicationStatusSchema }),
-  updateCompanyApplicationStatusController,
 );
 
 companyRouter.get(
