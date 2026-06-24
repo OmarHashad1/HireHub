@@ -1,0 +1,1213 @@
+openapi: 3.1.0
+info:
+  title: HireHub API
+  version: 1.0.0
+  description: >
+    REST API for HireHub — a job board / recruitment platform.
+    Authentication is cookie-based: a successful login sets HTTP-only
+    `accessToken` and `refreshToken` cookies. Most endpoints require the
+    `accessToken` cookie; role-restricted endpoints additionally require the
+    caller to hold the matching role (`user`, `company`, or `admin`).
+
+    All responses follow a common envelope: `{ statusCode, message, data? }`
+    on success and `{ statusCode, message, data? }` on error.
+
+servers:
+  - url: http://localhost:3000
+    description: Local development
+  - url: "{baseUrl}"
+    description: Custom
+    variables:
+      baseUrl:
+        default: http://localhost:3000
+
+tags:
+  - name: Auth
+  - name: User
+  - name: Company
+  - name: Job
+  - name: Application
+  - name: Saved Jobs
+  - name: Report
+  - name: Interview
+  - name: Admin
+  - name: Files
+
+security:
+  - cookieAuth: []
+
+paths:
+  # ─────────────────────────────── Auth ───────────────────────────────
+  /auth/signup:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SignupBody" }
+      responses:
+        "201": { $ref: "#/components/responses/Success" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in and receive auth cookies
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginBody" }
+      responses:
+        "200":
+          description: Sets accessToken/refreshToken cookies
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /auth/login/google:
+    get:
+      tags: [Auth]
+      summary: Initiate Google OAuth
+      security: []
+      responses:
+        "302": { description: Redirect to Google consent screen }
+  /auth/login/google/callback:
+    get:
+      tags: [Auth]
+      summary: Google OAuth callback
+      security: []
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+  /auth/refresh-token:
+    get:
+      tags: [Auth]
+      summary: Issue a new access token from the refresh cookie
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /auth/send-verify-email:
+    post:
+      tags: [Auth]
+      summary: Send an email-verification OTP
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EmailOnly" }
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /auth/verify-email:
+    post:
+      tags: [Auth]
+      summary: Verify email with OTP
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EmailOtp" }
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Send a password-reset OTP
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EmailOnly" }
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+  /auth/forgot-password/verify-otp:
+    post:
+      tags: [Auth]
+      summary: Verify the password-reset OTP
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EmailOtp" }
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+  /auth/reset-password:
+    patch:
+      tags: [Auth]
+      summary: Reset password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ResetPasswordBody" }
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+  /auth/change-password:
+    patch:
+      tags: [Auth]
+      summary: Change password (authenticated)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChangePasswordBody" }
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  # ─────────────────────────────── User ───────────────────────────────
+  /user/profile:
+    get:
+      tags: [User]
+      summary: Get own profile
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /user/profile/{id}:
+    get:
+      tags: [User]
+      summary: Get another user's public profile
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /user/logout:
+    post:
+      tags: [User]
+      summary: Log out (device or all sessions)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                logoutType: { type: string, enum: [all, device] }
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+  /user/change-avatar:
+    patch:
+      tags: [User]
+      summary: Upload/replace avatar
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                avatar: { type: string, format: binary }
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+  /user/delete-avatar:
+    delete:
+      tags: [User]
+      summary: Delete avatar
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+  /user/update-profile:
+    patch:
+      tags: [User]
+      summary: Update own profile (ROLE.USER)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+  /user/experience:
+    post:
+      tags: [User]
+      summary: Add experience (ROLE.USER)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        "201": { $ref: "#/components/responses/Success" }
+  /user/experience/{id}:
+    patch:
+      tags: [User]
+      summary: Update an experience entry (ROLE.USER)
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+    delete:
+      tags: [User]
+      summary: Delete an experience entry (ROLE.USER)
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+  /user/education:
+    post:
+      tags: [User]
+      summary: Add education (ROLE.USER)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        "201": { $ref: "#/components/responses/Success" }
+  /user/education/{id}:
+    patch:
+      tags: [User]
+      summary: Update an education entry (ROLE.USER)
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+    delete:
+      tags: [User]
+      summary: Delete an education entry (ROLE.USER)
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+  /user/change-email/send-otp:
+    post:
+      tags: [User]
+      summary: Send OTP to a new email address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EmailOnly" }
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+  /user/change-email:
+    patch:
+      tags: [User]
+      summary: Change email with OTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EmailOtp" }
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+  /user/change-cv:
+    patch:
+      tags: [User]
+      summary: Upload/replace CV (ROLE.USER)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                cv: { type: string, format: binary }
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+  /user/delete-cv:
+    delete:
+      tags: [User]
+      summary: Delete CV (ROLE.USER)
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+  /user/delete-account/send-otp:
+    post:
+      tags: [User]
+      summary: Send account-deletion OTP
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+  /user/delete-account:
+    delete:
+      tags: [User]
+      summary: Delete account with OTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                otp: { type: string, minLength: 6, maxLength: 6 }
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+
+  # ───────────────────────────── Company ──────────────────────────────
+  /company/application:
+    post:
+      tags: [Company]
+      summary: Submit a company application (ROLE.USER)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                companyName: { type: string }
+                companyEmail: { type: string, format: email }
+                contactPhone: { type: string }
+                industry: { $ref: "#/components/schemas/Industry" }
+                size: { $ref: "#/components/schemas/CompanySize" }
+                description: { type: string }
+                commercialRegistration: { type: string, format: binary }
+                taxCard: { type: string, format: binary }
+      responses:
+        "201": { $ref: "#/components/responses/Success" }
+  /company/profile:
+    get:
+      tags: [Company]
+      summary: Get own company profile (ROLE.COMPANY)
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+    patch:
+      tags: [Company]
+      summary: Update company profile (ROLE.COMPANY)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+  /company/{companyId}/jobs:
+    get:
+      tags: [Company]
+      summary: List a company's jobs (ROLE.ADMIN or owning ROLE.COMPANY)
+      parameters:
+        - { $ref: "#/components/parameters/CompanyIdParam" }
+        - { $ref: "#/components/parameters/Page" }
+        - { $ref: "#/components/parameters/Size" }
+      responses:
+        "200": { $ref: "#/components/responses/Paginated" }
+
+  # ─────────────────────────────── Job ────────────────────────────────
+  /job/jobs:
+    get:
+      tags: [Job]
+      summary: List all published jobs (public)
+      security: []
+      parameters:
+        - { $ref: "#/components/parameters/Page" }
+        - { $ref: "#/components/parameters/Size" }
+      responses:
+        "200": { $ref: "#/components/responses/Paginated" }
+    post:
+      tags: [Job]
+      summary: Create a job (ROLE.COMPANY)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateJobBody" }
+      responses:
+        "201": { $ref: "#/components/responses/Success" }
+  /job/{id}:
+    get:
+      tags: [Job]
+      summary: Get a single published job (public)
+      security: []
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [Job]
+      summary: Update a job's content (ROLE.COMPANY)
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateJobBody" }
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+    delete:
+      tags: [Job]
+      summary: Delete a job (ROLE.COMPANY)
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+  /job/company/{companyId}/jobs:
+    get:
+      tags: [Job]
+      summary: List published jobs for one active company (public)
+      security: []
+      parameters:
+        - { $ref: "#/components/parameters/CompanyIdParam" }
+        - { $ref: "#/components/parameters/Page" }
+        - { $ref: "#/components/parameters/Size" }
+      responses:
+        "200": { $ref: "#/components/responses/Paginated" }
+  /job/{id}/publish:
+    patch:
+      tags: [Job]
+      summary: Publish a job (DRAFT → PUBLISHED) (ROLE.COMPANY)
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+  /job/{id}/close:
+    patch:
+      tags: [Job]
+      summary: Close a job (PUBLISHED → CLOSED) (ROLE.COMPANY)
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+  /job/{id}/application:
+    post:
+      tags: [Job]
+      summary: Apply to a job (ROLE.USER)
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                coverLetter: { type: string }
+                cv:
+                  type: string
+                  format: binary
+                  description: Optional; falls back to the profile CV if omitted
+      responses:
+        "201": { $ref: "#/components/responses/Success" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /job/{id}/applications:
+    get:
+      tags: [Job]
+      summary: List applicants for a job (ROLE.COMPANY)
+      parameters:
+        - { $ref: "#/components/parameters/IdParam" }
+        - { $ref: "#/components/parameters/Page" }
+        - { $ref: "#/components/parameters/Size" }
+      responses:
+        "200": { $ref: "#/components/responses/Paginated" }
+
+  # ───────────────────────────── Application ──────────────────────────
+  /application/me:
+    get:
+      tags: [Application]
+      summary: List own applications (ROLE.ADMIN or ROLE.USER)
+      parameters:
+        - { $ref: "#/components/parameters/Page" }
+        - { $ref: "#/components/parameters/Size" }
+      responses:
+        "200": { $ref: "#/components/responses/Paginated" }
+  /application/{id}:
+    get:
+      tags: [Application]
+      summary: Get a single application (owner ROLE.USER or ROLE.ADMIN)
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [Application]
+      summary: Update application status/notes (ROLE.COMPANY)
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { $ref: "#/components/schemas/ApplicationStatus" }
+                recruiterNotes: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+  /application/{id}/withdraw:
+    patch:
+      tags: [Application]
+      summary: Withdraw an application (ROLE.USER)
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+
+  # ───────────────────────────── Saved Jobs ───────────────────────────
+  /save:
+    get:
+      tags: [Saved Jobs]
+      summary: List saved jobs (ROLE.USER)
+      parameters:
+        - { $ref: "#/components/parameters/Page" }
+        - { $ref: "#/components/parameters/Size" }
+      responses:
+        "200": { $ref: "#/components/responses/Paginated" }
+  /save/{id}:
+    post:
+      tags: [Saved Jobs]
+      summary: Save a job (ROLE.USER)
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      responses:
+        "201": { $ref: "#/components/responses/Success" }
+        "409": { $ref: "#/components/responses/Conflict" }
+    delete:
+      tags: [Saved Jobs]
+      summary: Unsave a job (ROLE.USER)
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+
+  # ─────────────────────────────── Report ─────────────────────────────
+  /report/company/{id}:
+    post:
+      tags: [Report]
+      summary: Report a company (ROLE.USER)
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReportBody" }
+      responses:
+        "201": { $ref: "#/components/responses/Success" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /report/user/{id}:
+    post:
+      tags: [Report]
+      summary: Report a user (ROLE.COMPANY)
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - { $ref: "#/components/schemas/ReportBody" }
+                - type: object
+                  properties:
+                    companyId: { type: string }
+                  required: [companyId]
+      responses:
+        "201": { $ref: "#/components/responses/Success" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /report/company:
+    get:
+      tags: [Report]
+      summary: List reports the company filed against users (ROLE.COMPANY)
+      parameters:
+        - { $ref: "#/components/parameters/Page" }
+        - { $ref: "#/components/parameters/Size" }
+      responses:
+        "200": { $ref: "#/components/responses/Paginated" }
+  /report/user:
+    get:
+      tags: [Report]
+      summary: List reports the user filed against companies (ROLE.USER)
+      parameters:
+        - { $ref: "#/components/parameters/Page" }
+        - { $ref: "#/components/parameters/Size" }
+      responses:
+        "200": { $ref: "#/components/responses/Paginated" }
+
+  # ───────────────────────────── Interview ────────────────────────────
+  /interview:
+    post:
+      tags: [Interview]
+      summary: Schedule an interview (ROLE.COMPANY)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ScheduleInterviewBody" }
+      responses:
+        "201": { $ref: "#/components/responses/Success" }
+        "500": { $ref: "#/components/responses/ServerError" }
+  /interview/me:
+    get:
+      tags: [Interview]
+      summary: List the caller's interviews
+      parameters:
+        - { $ref: "#/components/parameters/Page" }
+        - { $ref: "#/components/parameters/Size" }
+      responses:
+        "200": { $ref: "#/components/responses/Paginated" }
+  /interview/{id}:
+    get:
+      tags: [Interview]
+      summary: List a company's interviews (ROLE.COMPANY)
+      parameters:
+        - { $ref: "#/components/parameters/IdParam" }
+        - { $ref: "#/components/parameters/Page" }
+        - { $ref: "#/components/parameters/Size" }
+      responses:
+        "200": { $ref: "#/components/responses/Paginated" }
+    patch:
+      tags: [Interview]
+      summary: Update/cancel/reschedule a scheduled interview (ROLE.COMPANY)
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                scheduledAt: { type: string, format: date-time }
+                status: { type: string }
+                cancellationReason: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+
+  # ─────────────────────────────── Admin ──────────────────────────────
+  /admin/users:
+    get:
+      tags: [Admin]
+      summary: List all non-admin users
+      parameters:
+        - { $ref: "#/components/parameters/Page" }
+        - { $ref: "#/components/parameters/Size" }
+      responses:
+        "200": { $ref: "#/components/responses/Paginated" }
+  /admin/users/{id}:
+    get:
+      tags: [Admin]
+      summary: Get a single non-admin user
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [Admin]
+      summary: Ban / unban a user
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateUserStatusBody" }
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /admin/application:
+    patch:
+      tags: [Admin]
+      summary: Approve / reject a company application
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                applicationID: { type: string }
+                status: { type: string, enum: [approved, rejected] }
+                rejectionReason: { type: string }
+              required: [applicationID, status]
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /admin/company-applications:
+    get:
+      tags: [Admin]
+      summary: List all company applications
+      parameters:
+        - { $ref: "#/components/parameters/Page" }
+        - { $ref: "#/components/parameters/Size" }
+      responses:
+        "200": { $ref: "#/components/responses/Paginated" }
+  /admin/company-applications/{id}:
+    get:
+      tags: [Admin]
+      summary: Get company application details
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /admin/companies:
+    get:
+      tags: [Admin]
+      summary: List all companies
+      parameters:
+        - { $ref: "#/components/parameters/Page" }
+        - { $ref: "#/components/parameters/Size" }
+      responses:
+        "200": { $ref: "#/components/responses/Paginated" }
+  /admin/companies/{id}:
+    get:
+      tags: [Admin]
+      summary: Get company details
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [Admin]
+      summary: Suspend / unsuspend a company
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateCompanyStatusBody" }
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /admin/jobs:
+    get:
+      tags: [Admin]
+      summary: List all jobs (any status)
+      parameters:
+        - { $ref: "#/components/parameters/Page" }
+        - { $ref: "#/components/parameters/Size" }
+      responses:
+        "200": { $ref: "#/components/responses/Paginated" }
+  /admin/jobs/{id}:
+    get:
+      tags: [Admin]
+      summary: Get a job and all its applications
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      responses:
+        "200":
+          description: Job plus its applications
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: "#/components/schemas/ApiResponse" }
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          job: { type: object }
+                          applications: { type: array, items: { type: object } }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [Admin]
+      summary: Flag / publish a job
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateJobStatusBody" }
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /admin/applications:
+    get:
+      tags: [Admin]
+      summary: List all job applications
+      parameters:
+        - { $ref: "#/components/parameters/Page" }
+        - { $ref: "#/components/parameters/Size" }
+      responses:
+        "200": { $ref: "#/components/responses/Paginated" }
+  /admin/applications/{id}:
+    get:
+      tags: [Admin]
+      summary: Get a single application
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /admin/reports:
+    get:
+      tags: [Admin]
+      summary: List all reports
+      parameters:
+        - { $ref: "#/components/parameters/Page" }
+        - { $ref: "#/components/parameters/Size" }
+      responses:
+        "200": { $ref: "#/components/responses/Paginated" }
+  /admin/reports/{id}:
+    get:
+      tags: [Admin]
+      summary: Get report details
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [Admin]
+      summary: Resolve / dismiss a report
+      parameters: [{ $ref: "#/components/parameters/IdParam" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateReportStatusBody" }
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /admin/logs:
+    get:
+      tags: [Admin]
+      summary: List activity logs (newest first)
+      parameters:
+        - { $ref: "#/components/parameters/Page" }
+        - { $ref: "#/components/parameters/Size" }
+      responses:
+        "200": { $ref: "#/components/responses/Paginated" }
+  /admin/stats:
+    get:
+      tags: [Admin]
+      summary: Platform totals
+      responses:
+        "200":
+          description: Counts
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: "#/components/schemas/ApiResponse" }
+                  - type: object
+                    properties:
+                      data: { $ref: "#/components/schemas/Stats" }
+
+  # ─────────────────────────────── Files ──────────────────────────────
+  /uploads/{path}:
+    get:
+      tags: [Files]
+      summary: Resolve an owned S3 key to a presigned URL
+      description: >
+        The wildcard path is treated as an S3 key. Access is scoped by owner:
+        avatars/CVs to their owner, application CVs to the applicant/company/admin,
+        and company documents to admins only. Returns a 130-second presigned GET URL.
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/Success" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: accessToken
+
+  parameters:
+    IdParam:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, pattern: "^[0-9a-fA-F]{24}$" }
+    CompanyIdParam:
+      name: companyId
+      in: path
+      required: true
+      schema: { type: string, pattern: "^[0-9a-fA-F]{24}$" }
+    Page:
+      name: page
+      in: query
+      required: false
+      schema: { type: integer, minimum: 1, default: 1 }
+    Size:
+      name: size
+      in: query
+      required: false
+      schema: { type: integer, minimum: 1, maximum: 100, default: 10 }
+
+  responses:
+    Success:
+      description: Successful response
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiResponse" }
+    Paginated:
+      description: Paginated list
+      content:
+        application/json:
+          schema:
+            allOf:
+              - { $ref: "#/components/schemas/ApiResponse" }
+              - type: object
+                properties:
+                  data: { $ref: "#/components/schemas/Paginated" }
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    TooManyRequests:
+      description: Too many requests
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    ServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        statusCode: { type: integer }
+        message: { type: string }
+        data: {}
+      required: [statusCode, message]
+    Error:
+      type: object
+      properties:
+        statusCode: { type: integer }
+        message: { type: string }
+        data: { type: object, additionalProperties: true }
+      required: [statusCode, message]
+    Paginated:
+      type: object
+      properties:
+        docs:
+          type: array
+          items: { type: object }
+        meta:
+          type: object
+          properties:
+            count: { type: integer }
+            page: { type: integer }
+            size: { type: integer }
+            pages: { type: integer }
+    Stats:
+      type: object
+      properties:
+        users: { type: integer }
+        companies: { type: integer }
+        jobs: { type: integer }
+        applications: { type: integer }
+        reports: { type: integer }
+
+    # ── Enums ──
+    Role:
+      type: string
+      enum: [user, company, admin]
+    UserStatus:
+      type: string
+      enum: [active, deleted, banned]
+    CompanyStatus:
+      type: string
+      enum: [pending_activation, active, suspended]
+    JobStatus:
+      type: string
+      enum: [draft, published, closed, expired, suspended, flagged]
+    JobType:
+      type: string
+      enum: [full-time, part-time, remote, internship]
+    ExperienceLevel:
+      type: string
+      enum: [fresh, junior, mid, senior, lead, manager]
+    Currency:
+      type: string
+      enum: [EGP, USD, EUR, SAR, AED]
+    ApplicationStatus:
+      type: string
+      enum: [applied, reviewed, interview, offer, rejected, withdrawn]
+    ReportStatus:
+      type: string
+      enum: [pending, resolved, dismissed]
+    ReportReason:
+      type: string
+      enum:
+        - fake_job
+        - scam_company
+        - harassment_by_company
+        - unpaid_work
+        - misleading_job_description
+        - fake_profile
+        - inappropriate_behavior
+        - spamming
+        - other
+    Industry:
+      type: string
+      enum: [tech, finance, healthcare, education, retail, real_estate, manufacturing, media, other]
+    CompanySize:
+      type: string
+      enum: ["1-10", "11-50", "51-200", "201-500", "500+"]
+
+    # ── Request bodies ──
+    EmailOnly:
+      type: object
+      properties:
+        email: { type: string, format: email }
+      required: [email]
+    EmailOtp:
+      type: object
+      properties:
+        email: { type: string, format: email }
+        otp: { type: string, minLength: 6, maxLength: 6 }
+      required: [email, otp]
+    SignupBody:
+      type: object
+      required: [firstName, lastName, email, password, phoneNumber]
+      properties:
+        firstName: { type: string, minLength: 3, maxLength: 30 }
+        lastName: { type: string, minLength: 3, maxLength: 30 }
+        email: { type: string, format: email }
+        DOB: { type: string, format: date }
+        password:
+          type: string
+          minLength: 8
+          description: Must contain an uppercase letter, a number, and a special character
+        phoneNumber: { type: string, minLength: 7, maxLength: 20 }
+        avatar: { type: string }
+        headline: { type: string, maxLength: 100 }
+        bio: { type: string, maxLength: 500 }
+        location:
+          type: object
+          properties:
+            city: { type: string }
+            country: { type: string }
+        socialMedia:
+          type: object
+          properties:
+            linkedin: { type: string, format: uri }
+            github: { type: string, format: uri }
+            leetcode: { type: string, format: uri }
+            portfolio: { type: string, format: uri }
+        skills:
+          type: array
+          items: { type: string }
+    LoginBody:
+      type: object
+      required: [email, password, FCM]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 3 }
+        FCM: { type: string, description: Firebase Cloud Messaging token }
+    ResetPasswordBody:
+      type: object
+      required: [email, newPassword]
+      properties:
+        email: { type: string, format: email }
+        newPassword: { type: string, minLength: 8 }
+    ChangePasswordBody:
+      type: object
+      required: [password, newPassword]
+      properties:
+        password: { type: string, minLength: 3 }
+        newPassword: { type: string, minLength: 8 }
+    LocationBody:
+      type: object
+      properties:
+        city: { type: string }
+        country: { type: string }
+        isRemote: { type: boolean }
+    SalaryBody:
+      type: object
+      properties:
+        min: { type: number }
+        max: { type: number }
+        currency: { $ref: "#/components/schemas/Currency" }
+    CreateJobBody:
+      type: object
+      required: [title, description, experienceLevel, type, location]
+      properties:
+        title: { type: string }
+        description: { type: string }
+        requirements: { type: array, items: { type: string } }
+        skills: { type: array, items: { type: string } }
+        experienceLevel: { $ref: "#/components/schemas/ExperienceLevel" }
+        type: { $ref: "#/components/schemas/JobType" }
+        location: { $ref: "#/components/schemas/LocationBody" }
+        salary: { $ref: "#/components/schemas/SalaryBody" }
+        status: { type: string, enum: [published, draft, closed] }
+        deadline: { type: string, format: date-time, nullable: true }
+        aiThreshold: { type: integer, minimum: 0, maximum: 100, nullable: true }
+        autoReject: { type: boolean }
+    UpdateJobBody:
+      type: object
+      description: Fully-partial PATCH; status is owned by publish/close, not this body
+      properties:
+        title: { type: string }
+        description: { type: string }
+        requirements: { type: array, items: { type: string } }
+        skills: { type: array, items: { type: string } }
+        experienceLevel: { $ref: "#/components/schemas/ExperienceLevel" }
+        type: { $ref: "#/components/schemas/JobType" }
+        location: { $ref: "#/components/schemas/LocationBody" }
+        salary: { $ref: "#/components/schemas/SalaryBody" }
+        deadline: { type: string, format: date-time, nullable: true }
+        aiThreshold: { type: integer, minimum: 0, maximum: 100, nullable: true }
+        autoReject: { type: boolean }
+    ReportBody:
+      type: object
+      required: [reason, details]
+      properties:
+        reason: { $ref: "#/components/schemas/ReportReason" }
+        otherReason: { type: string, minLength: 10, maxLength: 100 }
+        details: { type: string, minLength: 10, maxLength: 100 }
+    ScheduleInterviewBody:
+      type: object
+      required: [applicationId, scheduledAt]
+      properties:
+        applicationId: { type: string }
+        scheduledAt:
+          type: string
+          format: date-time
+          description: ISO datetime, ≥1h ahead, ≤90 days out
+        location: { type: string }
+        notes: { type: string }
+    UpdateUserStatusBody:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [active, banned] }
+        banReason: { type: string, description: Required when status is banned }
+    UpdateCompanyStatusBody:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [active, suspended] }
+        suspendReason: { type: string, description: Required when status is suspended }
+    UpdateJobStatusBody:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [flagged, published] }
+    UpdateReportStatusBody:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [resolved, dismissed] }
+        resolutionNote: { type: string }
