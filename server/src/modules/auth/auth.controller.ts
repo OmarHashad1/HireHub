@@ -25,6 +25,7 @@ import {
   accessTokenCookieOptions,
   refreshTokenCookieOptions,
 } from "../../configs/cookie.config.js";
+import { CLIENT_URL } from "../../configs/env.config.js";
 import { IUser } from "../../types/user.types.js";
 
 export const signupController = async (
@@ -75,9 +76,9 @@ export const googleCallbackController = async (
   res: Response,
   next: NextFunction,
 ) => {
-  if (!req.user) return next(new Error("OAuth authentication failed"));
+  if (!req.user) return res.redirect(`${CLIENT_URL}/login?error=oauth`);
   try {
-    const { accessToken, refreshToken, firstName } = await googleLogin(
+    const { accessToken, refreshToken } = await googleLogin(
       req.user as unknown as {
         _id: string;
         email: string;
@@ -87,14 +88,9 @@ export const googleCallbackController = async (
     );
     res.cookie("accessToken", accessToken, accessTokenCookieOptions);
     res.cookie("refreshToken", refreshToken, refreshTokenCookieOptions);
-    successRes({
-      res,
-      message: "Logged in successfully",
-      status: StatusCodes.OK,
-      data: { firstName },
-    });
-  } catch (err) {
-    next(err);
+    res.redirect(`${CLIENT_URL}/auth/google/callback`);
+  } catch {
+    res.redirect(`${CLIENT_URL}/login?error=oauth`);
   }
 };
 
