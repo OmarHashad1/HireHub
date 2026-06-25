@@ -59,7 +59,9 @@ Implemented in the current backend:
 - **AI résumé scoring (Google Gemini)** — on application, the candidate's CV is parsed from PDF and scored against the job; the result (`aiRating` 0–100 + reasoning) is stored, and when the recruiter enables **`autoReject`** with an `aiThreshold`, below-threshold candidates are auto-rejected (with FCM + audit log). Runs in the background so the apply request stays fast.
 - **Interviews** — companies schedule, reschedule, cancel, and complete interviews; applicants are notified via FCM.
 - **Saved jobs** — candidates bookmark and list job listings (unique per user/job).
-- **Reports** — candidates report companies and companies report users.
+- **Reports** — candidates report companies and companies report users, and each side can list the reports it filed.
+- **Admin platform management** — admins manage users (ban/unban), companies (suspend/unsuspend), company applications (approve/reject), jobs (flag/publish + view a job with all its applications), applications, and reports (resolve/dismiss), plus read activity logs and platform stats. All under `/admin`.
+- **Scheduled background jobs** — `node-cron` tasks auto-expire published jobs past their deadline (`PUBLISHED → EXPIRED`) and mark stale scheduled interviews as missed (`SCHEDULED → MISSED`).
 - **User profiles** — avatar, CV, experience and education entries, public/private profile views.
 - **File uploads** — Multer + AWS S3, with presigned, ownership-checked download URLs (avatars, profile CVs, application CVs, and company verification documents).
 - **Push notifications** — Firebase Cloud Messaging (FCM) via `firebase-admin`.
@@ -72,7 +74,6 @@ Implemented in the current backend:
 
 Dependencies/reserved folders exist; not yet wired up:
 
-- **Scheduled jobs** — e.g. auto-expiring listings past their deadline (`node-cron` installed; `jobs/` reserved).
 - **Frontend client** — `client/` is reserved for the web app.
 
 ---
@@ -205,7 +206,8 @@ HireHub/
         ├── DB/             # Mongoose + Redis services, Pino→Mongo transport
         ├── models/         # Mongoose models (+ index re-export)
         ├── middlewares/    # auth, checkRole, validate, file access, error handler
-        ├── modules/        # auth · user · company · job · application · saved-job · report · interview · Gemini
+        ├── modules/        # auth · user · company · job · application · saved-job · report · interview · admin · Gemini
+        ├── jobs/           # node-cron background tasks (expire jobs, miss stale interviews)
         ├── events/         # notification (FCM) + email event emitters
         ├── repositories/   # DatabaseRepo<T> base + per-model repos
         ├── schemas/        # Zod validation schemas
@@ -291,11 +293,12 @@ Base route groups (mounted in `app.ts`):
 | `/job` | Jobs | public reads; company create / update / delete / **publish** / **close**; apply (`/:id/application`); list applicants |
 | `/application` | Applications | my applications, single application, withdraw, company status update |
 | `/save` | Saved jobs | save, unsave, list (user) |
-| `/report` | Reports | report a company (user); report a user (company) |
+| `/report` | Reports | report a company (user); report a user (company); list own filed reports |
 | `/interview` | Interviews | schedule, list company interviews, update/reschedule/cancel/complete (company) |
+| `/admin` | Admin | manage users, companies, company applications, jobs, applications, reports; activity logs; platform stats (admin only) |
 | `/uploads/*path` | File access | auth + ownership-checked presigned S3 URLs |
 
-A full route-by-route reference lives in [`CLAUDE.md`](./CLAUDE.md).
+A full route-by-route reference lives in [`CLAUDE.md`](./CLAUDE.md), and a machine-readable **OpenAPI 3.1** spec is at [`server/openapi.yaml`](./server/openapi.yaml).
 
 ---
 
