@@ -19,6 +19,8 @@ export const SMTP_PASS = process.env.SMTP_PASS as string;
 export const SMTP_PORT = process.env.SMTP_PORT as unknown as number;
 export const SMTP_FROM = (process.env.SMTP_FROM ?? process.env.SMTP_USER) as string;
 
+export const BREVO_API_KEY = process.env.BREVO_API_KEY as string;
+
 export const ENCRYPTION_SECRET = process.env.ENCRYPTION_SECRET as string;
 export const ENCRYPTION_IV_LENGTH = Number(process.env.ENCRYPTION_IV_LENGTH);
 export const ENCRYPTION_ALGORITHM = process.env.ENCRYPTION_ALGORITHM as string;

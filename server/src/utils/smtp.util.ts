@@ -1,47 +1,46 @@
-import { createTransport } from "nodemailer";
-import {
-  SMTP_FROM,
-  SMTP_HOST,
-  SMTP_PASS,
-  SMTP_PORT,
-  SMTP_USER,
-} from "../configs/env.config.js";
+import { BREVO_API_KEY, SMTP_FROM } from "../configs/env.config.js";
 import { serverLogger } from "./logger.util.js";
 import { emailDTO } from "../types/global.types.js";
 
-export const transporter = createTransport({
-  host: SMTP_HOST,
-  port: Number(SMTP_PORT),
-  secure: Number(SMTP_PORT) === 465, 
-  auth: {
-    user: SMTP_USER,
-    pass: SMTP_PASS,
-  },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-});
+const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 
 export const checkSMTP = async () => {
-  try {
-    await transporter.verify();
-    serverLogger.info("SMTP service is ready");
-  } catch (error) {
-    serverLogger.error(`SMTP Service Error: ${error}`);
+  if (!BREVO_API_KEY) {
+    serverLogger.error("Email service: BREVO_API_KEY is not set");
+    return;
   }
+  serverLogger.info("Email service is ready (Brevo HTTP API)");
 };
 
 export const sendMail = async ({ to, subject, html }: emailDTO) => {
   try {
-    await transporter.sendMail({
-      from: SMTP_FROM,
-      to,
-      html,
-      subject,
+    const response = await fetch(BREVO_API_URL, {
+      method: "POST",
+      headers: {
+        "api-key": BREVO_API_KEY,
+        "content-type": "application/json",
+        accept: "application/json",
+      },
+      body: JSON.stringify({
+        sender: { email: SMTP_FROM },
+        to: [{ email: to }],
+        subject,
+        htmlContent: html,
+      }),
     });
+
+    if (!response.ok) {
+      const body = await response.text();
+      serverLogger.error(
+        `Email Error: ${response.status} ${response.statusText} - ${body}`,
+      );
+      return;
+    }
+
     serverLogger.info(
       `Email sent successfully to ${to} with subject: ${subject}`,
     );
   } catch (error) {
-    serverLogger.error(`SMTP Error: ${error}`);
+    serverLogger.error(`Email Error: ${error}`);
   }
 };
