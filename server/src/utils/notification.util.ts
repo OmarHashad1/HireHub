@@ -1,15 +1,20 @@
 import { initializeApp, cert, App, ServiceAccount } from "firebase-admin/app";
 import { getMessaging } from "firebase-admin/messaging";
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { redisService } from "../DB/RedisService.js";
 import { Types } from "mongoose";
+import { FIREBASE_CREDENTIALS_PATH } from "../configs/env.config.js";
+
+const currentDir = dirname(fileURLToPath(import.meta.url));
+
+const credentialsPath = FIREBASE_CREDENTIALS_PATH
+  ? resolve(FIREBASE_CREDENTIALS_PATH)
+  : resolve(currentDir, "../../hirehub-9aa41-firebase-adminsdk-fbsvc-53c6a63519.json");
 
 const serviceAccount = JSON.parse(
-  readFileSync(
-    resolve("./hirehub-9aa41-firebase-adminsdk-fbsvc-53c6a63519.json"),
-    "utf8",
-  ),
+  readFileSync(credentialsPath, "utf8"),
 ) as ServiceAccount;
 
 const client: App = initializeApp({

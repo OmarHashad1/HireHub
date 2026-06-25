@@ -31,6 +31,8 @@ import { adminRouter } from "./modules/admin/admin.router.js";
 export const app = async () => {
   const APP: Express = express();
 
+  APP.set("trust proxy", 1);
+  
   APP.use(helmet());
   APP.use(cors({ origin: CLIENT_URL, credentials: true }));
   APP.use(globalLimiter);
@@ -63,6 +65,8 @@ export const app = async () => {
   APP.all("/{*dummy}", (_req: Request, _res: Response, next: NextFunction) => {
     next(new NotFoundException());
   });
+
+  APP.get("/health", (_req, res) => res.send("ok"));
 
   APP.use(globalErrorHandler);
 

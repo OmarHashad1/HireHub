@@ -1,8 +1,11 @@
 import { config } from "dotenv";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const currentDir = dirname(fileURLToPath(import.meta.url));
 
 config({
-  path: resolve(`./.env.${process.env.NODE_ENV && "development"}`),
+  path: resolve(currentDir, `../../.env.${process.env.NODE_ENV ?? "development"}`),
 });
 
 export const APPLICATION_NAME = process.env.APPLICATION_NAME as string;
@@ -48,3 +51,6 @@ export const AWS_BUCKET_NAME = process.env.AWS_BUCKET_NAME as string;
 
 export const GEMINI_API_KEY = process.env.GEMINI_API_KEY as string;
 export const GEMINI_MODEL = process.env.GEMINI_MODEL as string;
+
+export const FIREBASE_CREDENTIALS_PATH = process.env
+  .FIREBASE_CREDENTIALS_PATH as string | undefined;
