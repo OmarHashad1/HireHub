@@ -32,7 +32,11 @@ export const app = async () => {
   const APP: Express = express();
 
   APP.set("trust proxy", 1);
-  
+
+  APP.get("/health", (_req: Request, res: Response) => {
+    res.status(200).json({ status: "ok" });
+  });
+
   APP.use(helmet());
   APP.use(cors({ origin: CLIENT_URL, credentials: true }));
   APP.use(globalLimiter);
