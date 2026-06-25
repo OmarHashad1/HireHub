@@ -26,6 +26,7 @@ import {
 import passport from "passport";
 import { authLimiter } from "../../utils/limiter.util.js";
 import { auth } from "../../middlewares/auth.middleware.js";
+import { CLIENT_URL } from "../../configs/env.config.js";
 
 export const authRouter: Router = Router();
 
@@ -53,7 +54,10 @@ authRouter.get(
 authRouter.get(
   ROUTES.AUTH.GOOGLE_CALLBACK,
   authLimiter,
-  passport.authenticate("google", { session: false }),
+  passport.authenticate("google", {
+    session: false,
+    failureRedirect: `${CLIENT_URL}/login?error=oauth`,
+  }),
   googleCallbackController,
 );
 
