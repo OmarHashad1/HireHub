@@ -36,10 +36,12 @@ export const logout = async ({
   type,
   user,
   accessToken,
+  FCM,
 }: {
   type: LOGOUT_TYPE;
   user: IUser;
   accessToken: string;
+  FCM?: string;
 }) => {
   switch (type) {
     case LOGOUT_TYPE.DEVICE: {
@@ -55,6 +57,9 @@ export const logout = async ({
         value: jti,
         ttl: iat + 7 * 24 * 60 * 60 - Math.floor(Date.now() / 1000),
       });
+      if (FCM) {
+        await redisService.removeFCM(user._id as Types.ObjectId, FCM);
+      }
       break;
     }
     case LOGOUT_TYPE.ALL: {
@@ -66,6 +71,7 @@ export const logout = async ({
           credentialsChangedAt: new Date(),
         },
       });
+      await redisService.removeFCMUser(user._id as Types.ObjectId);
       break;
     }
     default: {

@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { redisService } from "../DB/RedisService.js";
 import { Types } from "mongoose";
 import { FIREBASE_CREDENTIALS_PATH } from "../configs/env.config.js";
+import { serverLogger } from "./logger.util.js";
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
 
@@ -34,10 +35,15 @@ export const sendNotification = async ({
   const token = (await redisService.getFCM(userId)) as string;
   if (!token) {
     return;
-    }
-  const message = {
-    token,
-    data,
-  };
-  return await getMessaging(client).send(message);
+  }
+  try {
+    return await getMessaging(client).send({ token, data });
+  } catch (error) {
+    serverLogger.error({
+      event: "notification.send.failed",
+      userId: userId.toString(),
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return;
+  }
 };

@@ -51,11 +51,12 @@ export const logoutController = async (
         message: "Unauthorized",
         status: StatusCodes.UNAUTHORIZED,
       });
-    const { type = LOGOUT_TYPE.DEVICE } = req.body;
+    const { type = LOGOUT_TYPE.DEVICE, FCM } = req.body;
     await logout({
       type,
       user: req.user,
       accessToken: req.cookies.accessToken,
+      FCM,
     });
     successRes({
       res,
