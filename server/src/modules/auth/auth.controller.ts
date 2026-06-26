@@ -7,7 +7,9 @@ import {
 } from "./../../schemas/auth.schema.js";
 import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import { successRes } from "../../utils/response.util.js";
+import { nanoid } from "nanoid";
+import { successRes, errorRes } from "../../utils/response.util.js";
+import { redisService } from "../../DB/RedisService.js";
 import { SignupDTO } from "../../schemas/auth.schema.js";
 import {
   changePassword,
@@ -86,11 +88,58 @@ export const googleCallbackController = async (
         firstName: string;
       },
     );
-    res.cookie("accessToken", accessToken, accessTokenCookieOptions);
-    res.cookie("refreshToken", refreshToken, refreshTokenCookieOptions);
-    res.redirect(`${CLIENT_URL}/auth/google/callback`);
+    const ticket = nanoid(48);
+    await redisService.set({
+      key: `oauth:ticket:${ticket}`,
+      value: { accessToken, refreshToken },
+      ttl: 120,
+    });
+    res.redirect(`${CLIENT_URL}/auth/google/callback?ticket=${ticket}`);
   } catch {
     res.redirect(`${CLIENT_URL}/login?error=oauth`);
+  }
+};
+
+export const exchangeGoogleTicketController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { ticket } = req.body as { ticket?: string };
+    if (!ticket || typeof ticket !== "string") {
+      return errorRes({
+        res,
+        message: "Invalid sign-in ticket",
+        status: StatusCodes.BAD_REQUEST,
+      });
+    }
+
+    const key = `oauth:ticket:${ticket}`;
+    const stored = await redisService.get(key);
+    if (!stored) {
+      return errorRes({
+        res,
+        message: "Sign-in session expired. Please try again.",
+        status: StatusCodes.UNAUTHORIZED,
+      });
+    }
+    await redisService.del(key);
+
+    const { accessToken, refreshToken } =
+      typeof stored === "string"
+        ? (JSON.parse(stored) as { accessToken: string; refreshToken: string })
+        : (stored as { accessToken: string; refreshToken: string });
+
+    res.cookie("accessToken", accessToken, accessTokenCookieOptions);
+    res.cookie("refreshToken", refreshToken, refreshTokenCookieOptions);
+    successRes({
+      res,
+      message: "Logged in successfully",
+      status: StatusCodes.OK,
+    });
+  } catch (err) {
+    next(err);
   }
 };
 

@@ -4,6 +4,7 @@ import { ROUTES } from "../../routes.js";
 import {
   changePasswordController,
   checkForgotPasswordOTPController,
+  exchangeGoogleTicketController,
   googleCallbackController,
   loginController,
   refreshTokenController,
@@ -59,6 +60,12 @@ authRouter.get(
     failureRedirect: `${CLIENT_URL}/login?error=oauth`,
   }),
   googleCallbackController,
+);
+
+authRouter.post(
+  ROUTES.AUTH.GOOGLE_EXCHANGE,
+  authLimiter,
+  exchangeGoogleTicketController,
 );
 
 authRouter.post(

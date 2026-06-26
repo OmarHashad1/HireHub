@@ -5,6 +5,7 @@ export const ROUTES = {
     LOGIN: "/login",
     GOOGLE_LOGIN: "/login/google",
     GOOGLE_CALLBACK: "/login/google/callback",
+    GOOGLE_EXCHANGE: "/login/google/exchange",
     REFRESH_TOKEN: "/refresh-token",
     SEND_VERIFY_EMAIL: "/send-verify-email",
     VERIFY_EMAIL: "/verify-email",
