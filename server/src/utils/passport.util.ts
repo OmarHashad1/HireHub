@@ -45,6 +45,7 @@ export const configPassport = () => {
                 email: profile.emails![0]!.value,
                 avatar: profile.photos![0]!.value,
                 provider: PROVIDER.GOOGLE,
+                isEmailVerified:true,
               },
             }));
           cb(null, user as IUser);
