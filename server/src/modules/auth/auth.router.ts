@@ -85,7 +85,6 @@ authRouter.post(
 authRouter.get(
   ROUTES.AUTH.REFRESH_TOKEN,
   authLimiter,
-  auth,
   refreshTokenController,
 );
 
