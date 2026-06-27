@@ -21,7 +21,10 @@ const jobRepo = new JobRepo();
 export const getPublishedJobs = async ({ page, size }: paginationQueryDTO) => {
   return jobRepo.paginate({
     filter: { status: JOB_STATUS.PUBLISHED },
-    options: { lean: true },
+    options: {
+      lean: true,
+      populate: { path: "company", select: { name: 1, logo: 1, industry: 1 } },
+    },
     page,
     size,
   });
@@ -32,7 +35,10 @@ export const getPublishedJob = async (
 ): Promise<FlattenMaps<IJob>> => {
   const doc = await jobRepo.findOne({
     filter: { status: JOB_STATUS.PUBLISHED, _id: jobId },
-    options: { lean: true },
+    options: {
+      lean: true,
+      populate: { path: "company", select: { name: 1, logo: 1, industry: 1 } },
+    },
   });
   if (!doc) throw new NotFoundException("Job not found");
 
@@ -52,7 +58,10 @@ export const getCompanyPublishedJobs = async (
 
   return jobRepo.paginate({
     filter: { company: company._id, status: JOB_STATUS.PUBLISHED },
-    options: { lean: true },
+    options: {
+      lean: true,
+      populate: { path: "company", select: { name: 1, logo: 1, industry: 1 } },
+    },
     page,
     size,
   });
