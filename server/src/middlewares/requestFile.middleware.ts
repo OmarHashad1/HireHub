@@ -12,12 +12,10 @@ import { ROLE } from "../enums/user.enums.js";
 import { CompanyApplicationRepo } from "../repositories/companyApplication.repo.js";
 import { ICompanyApplicationDocuments } from "../types/companyApplication.types.js";
 import { ApplicationRepo } from "../repositories/application.repo.js";
-import { CompanyRepo } from "../repositories/company.repo.js";
 import { Types } from "mongoose";
 
 const companyApplicationRepo = new CompanyApplicationRepo();
 const applicationRepo = new ApplicationRepo();
-const companyRepo = new CompanyRepo();
 
 export const requestFileMiddleware = async (
   req: Request,
