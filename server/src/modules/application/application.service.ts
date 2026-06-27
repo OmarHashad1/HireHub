@@ -294,7 +294,19 @@ export const getJobApplications = async (
 
   const payload = await applicationRepo.paginate({
     filter: { job: jobId },
-    options: { lean: true },
+    options: {
+      lean: true,
+      populate: {
+        path: "applicant",
+        select: {
+          firstName: 1,
+          lastName: 1,
+          avatar: 1,
+          headline: 1,
+          email: 1,
+        },
+      },
+    },
     page: dto.page,
     size: dto.size,
   });

@@ -184,6 +184,13 @@ export const getCompanyInterviews = async (
     },
     options: {
       lean: true,
+      populate: [
+        {
+          path: "applicant",
+          select: { firstName: 1, lastName: 1, avatar: 1, headline: 1 },
+        },
+        { path: "job", select: { title: 1 } },
+      ],
     },
     page: paginatedto.page,
     size: paginatedto.size,
