@@ -1,8 +1,11 @@
 import { NextFunction, Request, Response } from "express";
 import {
+  changeCompanyLogo,
   companyApplication,
   companyProfile,
+  deleteCompanyLogo,
   getCompanyJobs,
+  getPublicCompany,
   updateCompanyProfile,
 } from "./company.service.js";
 import { successRes } from "../../utils/response.util.js";
@@ -49,6 +52,62 @@ export const companyProfileController = async (
     successRes({
       res,
       message: "Company Profile Fetched Successfully",
+      status: StatusCodes.OK,
+      data: payload,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const changeCompanyLogoController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const payload = await changeCompanyLogo(
+      req.user as IUser,
+      req.file as Express.Multer.File,
+    );
+    successRes({
+      res,
+      message: "Company logo updated successfully",
+      status: StatusCodes.OK,
+      data: payload,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const deleteCompanyLogoController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    await deleteCompanyLogo(req.user as IUser);
+    successRes({
+      res,
+      message: "Company logo deleted successfully",
+      status: StatusCodes.OK,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getPublicCompanyController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const payload = await getPublicCompany(req.params.id as string);
+    successRes({
+      res,
+      message: "Company Fetched Successfully",
       status: StatusCodes.OK,
       data: payload,
     });

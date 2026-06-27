@@ -37,7 +37,9 @@ export const ROUTES = {
     BASE: "/company",
     COMPANY_APPLLICATION: "/application",
     COMPANY_PROFILE: "/profile",
+    COMPANY_LOGO: "/logo",
     COMPANY_JOBS: "/:companyId/jobs",
+    PUBLIC_COMPANY: "/:id",
   },
   APPLICATION: {
     BASE: "/application",
@@ -77,7 +79,7 @@ export const ROUTES = {
   ADMIN: {
     BASE: "/admin",
     LIST_USERS: "/users",
-    USER:"/users/:id",
+    USER: "/users/:id",
     LIST_COMPANY_APPLICATIONS: "/company-applications",
     COMPANY_APPLICATION_ITEM: "/company-applications/:id",
     LIST_COMPANIES: "/companies",
@@ -90,5 +92,9 @@ export const ROUTES = {
     REPORT_ITEM: "/reports/:id",
     LIST_LOGS: "/logs",
     STATS: "/stats",
+  },
+  FILES: {
+    PUBLIC: "/public/uploads/*path",
+    PROTECTED: "/uploads/*path",
   },
 } as const;

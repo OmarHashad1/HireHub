@@ -4,12 +4,19 @@ import { CompanyApplicationRepo } from "../../repositories/companyApplication.re
 import { ICompanyApplication } from "../../types/companyApplication.types.js";
 import { encrypt } from "../../utils/encryption.util.js";
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenExceptions,
   InternalServerErrorException,
   NotFoundException,
 } from "../../utils/errorHandler.util.js";
-import { deleteAssets, uploadAssets } from "../../utils/s3.util.js";
+import {
+  deleteAsset,
+  deleteAssets,
+  uploadAsset,
+  uploadAssets,
+} from "../../utils/s3.util.js";
+import { multerStorageType } from "../../enums/multer.enums.js";
 import { IUser } from "../../types/user.types.js";
 import { CompanyRepo } from "../../repositories/company.repo.js";
 import { COMPANY_STATUS } from "../../enums/company.enums.js";
@@ -149,6 +156,76 @@ export const companyProfile = async (user: IUser) => {
 
   if (!payload) throw new NotFoundException("Company Not Found");
   return payload;
+};
+
+export const getPublicCompany = async (id: string) => {
+  const company = await companyRepo.findOne({
+    filter: { _id: id, status: COMPANY_STATUS.ACTIVE },
+    projection: {
+      name: 1,
+      logo: 1,
+      coverImage: 1,
+      industry: 1,
+      size: 1,
+      location: 1,
+      description: 1,
+      website: 1,
+      benefits: 1,
+      socialMedia: 1,
+      foundedAt: 1,
+      email: 1,
+      createdAt: 1,
+    },
+    options: { lean: true },
+  });
+
+  if (!company) throw new NotFoundException("Company not found");
+  return company;
+};
+
+export const changeCompanyLogo = async (
+  user: IUser,
+  file: Express.Multer.File,
+) => {
+  const company = await companyRepo.findOne({
+    filter: { owner: user._id, status: COMPANY_STATUS.ACTIVE },
+    projection: { _id: 1, logo: 1 },
+    options: { lean: true },
+  });
+  if (!company) throw new NotFoundException("Company not found");
+
+  if (company.logo) {
+    await deleteAsset({ Key: company.logo });
+  }
+
+  const bucketKey = await uploadAsset({
+    path: `company/logo/${company._id}`,
+    file,
+    storageStrategy: multerStorageType.DESK,
+  });
+
+  await companyRepo.updateOne({
+    filter: { _id: company._id },
+    update: { logo: bucketKey },
+  });
+
+  return { logo: bucketKey };
+};
+
+export const deleteCompanyLogo = async (user: IUser) => {
+  const company = await companyRepo.findOne({
+    filter: { owner: user._id, status: COMPANY_STATUS.ACTIVE },
+    projection: { _id: 1, logo: 1 },
+    options: { lean: true },
+  });
+  if (!company) throw new NotFoundException("Company not found");
+  if (!company.logo) throw new BadRequestException("No company logo to delete");
+
+  await deleteAsset({ Key: company.logo });
+  await companyRepo.updateOne({
+    filter: { _id: company._id },
+    update: { $unset: { logo: 1 } },
+  });
 };
 
 export const updateCompanyProfile = async (
