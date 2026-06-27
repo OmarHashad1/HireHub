@@ -27,6 +27,7 @@ import { savedJobRouter } from "./modules/saved-job/savedJobs.router.js";
 import { reportRouter } from "./modules/report/report.router.js";
 import { interviewRouter } from "./modules/interview/interview.router.js";
 import { adminRouter } from "./modules/admin/admin.router.js";
+import { PublicfilesMiddleware } from "./middlewares/publicFile.middleware.js";
 
 export const app = async () => {
   const APP: Express = express();
@@ -56,7 +57,8 @@ export const app = async () => {
     process.exit(1);
   }
 
-  APP.use("/uploads/*path", auth, requestFileMiddleware);
+  APP.use(ROUTES.FILES.PUBLIC, PublicfilesMiddleware);
+  APP.use(ROUTES.FILES.PROTECTED, auth, requestFileMiddleware);
   APP.use(ROUTES.USER.BASE, userRouter);
   APP.use(ROUTES.AUTH.BASE, authRouter);
   APP.use(ROUTES.COMPANY.BASE, companyRouter);
