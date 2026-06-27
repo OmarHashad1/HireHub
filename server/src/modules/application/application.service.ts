@@ -131,6 +131,19 @@ export const withdrawApplication = async (
   application.withdrawnAt = new Date();
   const withdrawn = await application.save();
 
+  try {
+    await jobRepo.updateOne({
+      filter: { _id: application.job, applicantsCount: { $gt: 0 } },
+      update: { $inc: { applicantsCount: -1 } },
+    });
+  } catch (err) {
+    // Denormalized counter — a failure here must not fail the withdrawal.
+    serverLogger.error(
+      { err, jobId: application.job, applicationId: application._id },
+      "Failed to decrement job applicantsCount",
+    );
+  }
+
   activityLogger.info({
     event: "application.withdrawn",
     actor: user._id,
@@ -208,6 +221,19 @@ export const createApplication = async (
   } catch (err) {
     await deleteAsset({ Key: cvKey });
     throw err;
+  }
+
+  try {
+    await jobRepo.updateOne({
+      filter: { _id: job._id },
+      update: { $inc: { applicantsCount: 1 } },
+    });
+  } catch (err) {
+    // Denormalized counter — a failure here must not fail the application.
+    serverLogger.error(
+      { err, jobId: job._id, applicationId: application._id },
+      "Failed to increment job applicantsCount",
+    );
   }
 
   activityLogger.info({
