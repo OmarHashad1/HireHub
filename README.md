@@ -2,7 +2,7 @@
 
 > A job-board platform that connects **verified companies** with **job seekers** — with admin-gated company onboarding, full job lifecycle management, and a security-first backend.
 
-HireHub is the backend (REST API) for a hiring marketplace. Companies apply and are vetted by admins before they can post jobs; job seekers build rich profiles (experience, education, CV) and browse published openings. The codebase is written in strict TypeScript on top of Express 5, MongoDB, and Redis, with a clean layered architecture (router → controller → service → repository → model).
+HireHub is a full-stack hiring marketplace: an Express 5 REST API (`server/`) plus a Next.js web client (`client/`). Companies apply and are vetted by admins before they can post jobs; job seekers build rich profiles (experience, education, CV) and browse published openings. The backend is written in strict TypeScript on top of Express 5, MongoDB, and Redis, with a clean layered architecture (router → controller → service → repository → model); the client is a Next.js 16 / React 19 app that talks to it through a same-origin `/api` proxy.
 
 ---
 
@@ -19,6 +19,7 @@ HireHub is the backend (REST API) for a hiring marketplace. Companies apply and 
 - [Getting Started](#getting-started)
 - [Environment Variables](#environment-variables)
 - [API Overview](#api-overview)
+- [Client (Web App)](#client-web-app)
 - [Security](#security)
 - [Logging & Observability](#logging--observability)
 - [License](#license)
@@ -72,9 +73,7 @@ Implemented in the current backend:
 
 ## Roadmap
 
-Dependencies/reserved folders exist; not yet wired up:
-
-- **Frontend client** — `client/` is reserved for the web app.
+- **Web client** — a Next.js frontend now lives in `client/` (see [Client (Web App)](#client-web-app)). Admin UI is the next area to expand.
 
 ---
 
@@ -194,7 +193,7 @@ Exported from `server/src/models/index.ts` (always import from there):
 
 ```
 HireHub/
-├── client/                 # Reserved for the frontend
+├── client/                 # Next.js web app (see "Client (Web App)")
 ├── documents/              # Project docs
 ├── CLAUDE.md               # In-depth architecture/dev guide
 └── server/
@@ -299,6 +298,54 @@ Base route groups (mounted in `app.ts`):
 | `/uploads/*path` | File access | auth + ownership-checked presigned S3 URLs |
 
 A full route-by-route reference lives in [`CLAUDE.md`](./CLAUDE.md), and a machine-readable **OpenAPI 3.1** spec is at [`server/openapi.yaml`](./server/openapi.yaml).
+
+---
+
+## Client (Web App)
+
+`client/` is a **Next.js 16 (App Router) + React 19** web client in strict TypeScript. It talks to the API entirely through a same-origin **`/api` proxy** (a Next rewrite), so authentication stays on first-party HTTP-only cookies and there are no cross-site cookie issues.
+
+### Highlights
+
+- **Public job board** — browse, search, and filter published jobs; job detail; public company profiles with logos (and a placeholder when a company has none).
+- **Authentication** — email/password login & signup, and **Google OAuth** via the backend's one-time-ticket exchange; session-aware UI with automatic access-token refresh on `401`.
+- **Job-seeker workspace (`/me`)** — profile with experience & education CRUD, avatar and CV upload, applications, saved jobs, interviews, reports, and account settings (change email/password with OTP + resend, delete account).
+- **Recruiter dashboard (`/recruiter`)** — overview stats, full job management (create, edit, and **draft / publish / close / move-to-draft**), per-job applicants with AI scores and CV access, interview scheduling (schedule / reschedule / cancel / complete), and company profile + logo management.
+- **Role-based routing** — an `AuthGate` guards each area and redirects users to their home (`/me`, `/recruiter`, `/admin`).
+- **Secure file access** — presigned download URLs via the API: company logos through the public route, avatars and CVs through the authenticated, ownership-checked route.
+
+### Tech
+
+| Concern | Technology |
+|---|---|
+| Framework | Next.js 16 (App Router), React 19 |
+| Server state | TanStack Query |
+| Forms & validation | React Hook Form + Zod 4 |
+| Styling | Tailwind CSS v4 |
+| HTTP | Axios (`/api` proxy, `withCredentials`) |
+| UI / motion | Motion, lucide-react, sonner, Recharts |
+| Push | Firebase Cloud Messaging (web) |
+
+### Running the client
+
+```bash
+cd client
+npm install
+npm run dev        # http://localhost:3001
+```
+
+The dev server proxies `/api/*` to `BACKEND_ORIGIN` (set in `client/.env.development`). Point it at your local API for fast iteration:
+
+```bash
+BACKEND_ORIGIN=http://localhost:3000
+```
+
+> Restart the Next dev server after changing `BACKEND_ORIGIN` or `next.config.ts` — both are read only at startup.
+
+| Variable | Purpose |
+|---|---|
+| `BACKEND_ORIGIN` | API origin the `/api` proxy rewrites to |
+| `NEXT_PUBLIC_FIREBASE_*` | Firebase web config + VAPID key for FCM |
 
 ---
 
