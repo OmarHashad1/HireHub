@@ -127,6 +127,11 @@ export const updateJob = async (
   const job = await loadOwnedJob(user, jobId);
   if (job.status === JOB_STATUS.SUSPENDED)
     throw new ForbiddenExceptions("Job is suspended and can not be modified");
+  if (dto.status === JOB_STATUS.DRAFT && job.status !== JOB_STATUS.PUBLISHED) {
+    throw new BadRequestException(
+      "Only a published job can be moved back to draft",
+    );
+  }
 
   const { location, salary, ...rest } = dto;
   const update: UpdateQuery<IJob> = { ...rest };

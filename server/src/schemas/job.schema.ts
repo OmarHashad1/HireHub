@@ -82,6 +82,7 @@ export const updateJobSchema = z
     deadline: z.coerce.date().nullish(),
     aiThreshold: z.number().min(0).max(100).nullish(),
     autoReject: z.boolean().optional(),
+    status: z.enum([JOB_STATUS.DRAFT]).optional(),
   })
   .refine((d) => Object.keys(d).length > 0, {
     message: "At least one field must be provided to update",
