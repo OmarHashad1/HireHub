@@ -1,0 +1,268 @@
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { toast } from "sonner";
+import { api, unwrap, apiMessage, type Paginated } from "@/lib/api";
+import { jobKeys } from "@/features/jobs/api";
+import type {
+  CompanyProfile,
+  Job,
+  JobApplicant,
+  Interview,
+} from "@/lib/types";
+
+export const recruiterKeys = {
+  company: ["recruiter", "company"] as const,
+  jobs: (companyId?: string) => ["recruiter", "jobs", companyId] as const,
+  applicants: (jobId: string) => ["recruiter", "applicants", jobId] as const,
+  interviews: (companyId?: string) =>
+    ["recruiter", "interviews", companyId] as const,
+};
+
+export type JobPayload = {
+  title: string;
+  description: string;
+  type: string;
+  experienceLevel: string;
+  requirements?: string[];
+  skills?: string[];
+  location: { isRemote: boolean; city?: string; country?: string };
+  salary?: { min?: number; max?: number; currency?: string };
+  deadline?: string | null;
+  autoReject?: boolean;
+  aiThreshold?: number | null;
+  // Only set on create ("draft" | "published"). Status changes after creation
+  // go through publish/close/draft endpoints, never a plain update.
+  status?: "draft" | "published";
+};
+
+// ─── Company profile ────────────────────────────────────────────────────────
+
+export function useMyCompany() {
+  return useQuery({
+    queryKey: recruiterKeys.company,
+    staleTime: 60_000,
+    queryFn: () => unwrap<CompanyProfile>(api.get("/company/profile")),
+  });
+}
+
+export function useUpdateCompanyProfile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) =>
+      api.patch("/company/profile", payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: recruiterKeys.company });
+      toast.success("Company profile updated");
+    },
+    onError: (e) => toast.error(apiMessage(e, "Couldn't update profile")),
+  });
+}
+
+export function useUploadCompanyLogo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => {
+      const form = new FormData();
+      form.append("logo", file);
+      return api.patch("/company/logo", form);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: recruiterKeys.company });
+      toast.success("Logo updated");
+    },
+    onError: (e) => toast.error(apiMessage(e, "Couldn't upload logo")),
+  });
+}
+
+export function useDeleteCompanyLogo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.delete("/company/logo"),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: recruiterKeys.company });
+      toast.success("Logo removed");
+    },
+    onError: (e) => toast.error(apiMessage(e, "Couldn't remove logo")),
+  });
+}
+
+// ─── Jobs ───────────────────────────────────────────────────────────────────
+
+export function useMyJobs(companyId?: string) {
+  return useQuery({
+    queryKey: recruiterKeys.jobs(companyId),
+    enabled: !!companyId,
+    queryFn: () =>
+      unwrap<Paginated<Job>>(
+        api.get(`/company/${companyId}/jobs`, {
+          params: { page: 1, size: 100 },
+        }),
+      ),
+  });
+}
+
+function useJobInvalidation() {
+  const qc = useQueryClient();
+  return () => {
+    qc.invalidateQueries({ queryKey: ["recruiter", "jobs"] });
+    qc.invalidateQueries({ queryKey: jobKeys.all });
+  };
+}
+
+export function useCreateJob() {
+  const invalidate = useJobInvalidation();
+  return useMutation({
+    mutationFn: (payload: JobPayload) => api.post("/job/jobs", payload),
+    onSuccess: () => {
+      invalidate();
+      toast.success("Job created");
+    },
+    onError: (e) => toast.error(apiMessage(e, "Couldn't create job")),
+  });
+}
+
+export function useUpdateJob() {
+  const invalidate = useJobInvalidation();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: JobPayload }) =>
+      api.patch(`/job/${id}`, payload),
+    onSuccess: () => {
+      invalidate();
+      toast.success("Job updated");
+    },
+    onError: (e) => toast.error(apiMessage(e, "Couldn't update job")),
+  });
+}
+
+export function usePublishJob() {
+  const invalidate = useJobInvalidation();
+  return useMutation({
+    mutationFn: (id: string) => api.patch(`/job/${id}/publish`),
+    onSuccess: () => {
+      invalidate();
+      toast.success("Job published");
+    },
+    onError: (e) => toast.error(apiMessage(e, "Couldn't publish job")),
+  });
+}
+
+export function useCloseJob() {
+  const invalidate = useJobInvalidation();
+  return useMutation({
+    mutationFn: (id: string) => api.patch(`/job/${id}/close`),
+    onSuccess: () => {
+      invalidate();
+      toast.success("Job closed");
+    },
+    onError: (e) => toast.error(apiMessage(e, "Couldn't close job")),
+  });
+}
+
+// Unpublish a published job back to draft via the update endpoint.
+export function useDraftJob() {
+  const invalidate = useJobInvalidation();
+  return useMutation({
+    mutationFn: (id: string) => api.patch(`/job/${id}`, { status: "draft" }),
+    onSuccess: () => {
+      invalidate();
+      toast.success("Job moved to draft");
+    },
+    onError: (e) => toast.error(apiMessage(e, "Couldn't move job to draft")),
+  });
+}
+
+// ─── Applicants ─────────────────────────────────────────────────────────────
+
+export function useJobApplicants(jobId: string) {
+  return useQuery({
+    queryKey: recruiterKeys.applicants(jobId),
+    enabled: !!jobId,
+    queryFn: () =>
+      unwrap<Paginated<JobApplicant>>(
+        api.get(`/job/${jobId}/applications`, {
+          params: { page: 1, size: 100 },
+        }),
+      ),
+  });
+}
+
+export function useUpdateApplication(jobId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: {
+        status?: "offer" | "rejected";
+        rejectionReason?: string;
+        recruiterNotes?: string;
+      };
+    }) => api.patch(`/application/${id}`, payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: recruiterKeys.applicants(jobId) });
+      toast.success("Application updated");
+    },
+    onError: (e) => toast.error(apiMessage(e, "Couldn't update application")),
+  });
+}
+
+// ─── Interviews ─────────────────────────────────────────────────────────────
+
+export function useCompanyInterviews(companyId?: string) {
+  return useQuery({
+    queryKey: recruiterKeys.interviews(companyId),
+    enabled: !!companyId,
+    queryFn: () =>
+      unwrap<Paginated<Interview>>(
+        api.get(`/interview/${companyId}`, {
+          params: { page: 1, size: 100 },
+        }),
+      ),
+  });
+}
+
+export function useScheduleInterview(jobId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: {
+      application: string;
+      type: string;
+      scheduledAt: string;
+    }) => api.post("/interview", payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["recruiter", "interviews"] });
+      if (jobId)
+        qc.invalidateQueries({ queryKey: recruiterKeys.applicants(jobId) });
+      toast.success("Interview scheduled");
+    },
+    onError: (e) => toast.error(apiMessage(e, "Couldn't schedule interview")),
+  });
+}
+
+export function useUpdateInterview() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: {
+        type?: string;
+        scheduledAt?: string;
+        status?: "cancelled" | "completed";
+        cancellationReason?: string;
+      };
+    }) => api.patch(`/interview/${id}`, payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["recruiter", "interviews"] });
+      toast.success("Interview updated");
+    },
+    onError: (e) => toast.error(apiMessage(e, "Couldn't update interview")),
+  });
+}
