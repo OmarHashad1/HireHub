@@ -33,6 +33,7 @@ import {
   jobModel,
   applicationModel,
   reportModel,
+  companyApplicationModel,
 } from "../../models/index.js";
 
 import { CompanyApplicationRepo } from "../../repositories/companyApplication.repo.js";
@@ -478,16 +479,53 @@ export const getLogs = async (dto: paginationQueryDTO) => {
   return paylaod;
 };
 
+type StatusCount = { _id: string | null; count: number };
+
+const toBreakdown = (rows: StatusCount[]): Record<string, number> =>
+  rows.reduce<Record<string, number>>((acc, row) => {
+    if (row._id) acc[row._id] = row.count;
+    return acc;
+  }, {});
+
+const groupByStatus = [{ $group: { _id: "$status", count: { $sum: 1 } } }];
+
 export const getStats = async () => {
-  const [users, companies, jobs, applications, reports] = await Promise.all([
+  const [
+    users,
+    companies,
+    jobs,
+    applications,
+    reports,
+    pendingCompanyApplications,
+    jobRows,
+    applicationRows,
+    reportRows,
+  ] = await Promise.all([
     userModel.countDocuments({ role: ROLE.USER }),
     companyModel.countDocuments({}),
     jobModel.countDocuments({}),
     applicationModel.countDocuments({}),
     reportModel.countDocuments({}),
+    companyApplicationModel.countDocuments({
+      status: COMPANY_APPLICATION_STATUS.PENDING,
+    }),
+    jobModel.aggregate<StatusCount>(groupByStatus),
+    applicationModel.aggregate<StatusCount>(groupByStatus),
+    reportModel.aggregate<StatusCount>(groupByStatus),
   ]);
 
-  return { users, companies, jobs, applications, reports };
+  return {
+    users,
+    companies,
+    jobs,
+    applications,
+    reports,
+    pendingCompanyApplications,
+    pendingReports: toBreakdown(reportRows)[REPORT_STATUS.PENDING] ?? 0,
+    jobsByStatus: toBreakdown(jobRows),
+    applicationsByStatus: toBreakdown(applicationRows),
+    reportsByStatus: toBreakdown(reportRows),
+  };
 };
 
 export const getUser = async (userId: string) => {
