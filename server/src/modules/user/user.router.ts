@@ -54,13 +54,18 @@ userRouter.post(ROUTES.USER.LOGOUT, auth, logoutController);
 userRouter.patch(
   ROUTES.USER.CHANGE_AVATAR,
   auth,
-  uploadAvatar.single("avatar"),
   checkRole([ROLE.USER]),
+  uploadAvatar.single("avatar"),
   validate({ file: mutlerFileSchema }),
   changeAvatarController,
 );
 
-userRouter.delete(ROUTES.USER.DELETE_AVATAR, auth, deleteAvatarController);
+userRouter.delete(
+  ROUTES.USER.DELETE_AVATAR,
+  auth,
+  checkRole([ROLE.USER]),
+  deleteAvatarController,
+);
 
 userRouter.patch(
   ROUTES.USER.UPDATE_PROFILE,
