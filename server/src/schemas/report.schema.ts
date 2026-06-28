@@ -1,5 +1,8 @@
 import * as z from "zod";
-import { REPORT_REASON } from "../enums/report.enums.js";
+import {
+  REPORT_REASON,
+  APPLICANT_REPORT_REASON,
+} from "../enums/report.enums.js";
 
 const reportBase = z.strictObject({
   reason: z.enum([...Object.values(REPORT_REASON)]),
@@ -17,6 +20,7 @@ export const companyReportSchema = reportBase.refine(otherReasonRefine, {
 
 export const userReportSchema = reportBase
   .extend({
+    reason: z.enum([...APPLICANT_REPORT_REASON]),
     companyId: z.string().regex(/^[0-9a-fA-F]{24}$/, { error: "Invalid id" }),
   })
   .refine(otherReasonRefine, {
