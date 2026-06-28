@@ -89,6 +89,13 @@ export const REPORT_REASON = [
   "other",
 ] as const;
 
+export const APPLICANT_REPORT_REASON = [
+  "fake_profile",
+  "inappropriate_behavior",
+  "spamming",
+  "other",
+] as const;
+
 export const EDUCATION_LABEL: Record<(typeof EDUCATION_LEVEL)[number], string> = {
   "high-school": "High school",
   bachelor: "Bachelor",

@@ -2,6 +2,7 @@ import {
   useMutation,
   useQuery,
   useQueryClient,
+  keepPreviousData,
 } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api, unwrap, apiMessage, type Paginated } from "@/lib/api";
@@ -13,12 +14,16 @@ import type {
   Interview,
 } from "@/lib/types";
 
+export const PAGE_SIZE = 10;
+
 export const recruiterKeys = {
   company: ["recruiter", "company"] as const,
-  jobs: (companyId?: string) => ["recruiter", "jobs", companyId] as const,
-  applicants: (jobId: string) => ["recruiter", "applicants", jobId] as const,
-  interviews: (companyId?: string) =>
-    ["recruiter", "interviews", companyId] as const,
+  jobs: (companyId?: string, page = 1) =>
+    ["recruiter", "jobs", companyId, page] as const,
+  applicants: (jobId: string, page = 1) =>
+    ["recruiter", "applicants", jobId, page] as const,
+  interviews: (companyId?: string, page = 1) =>
+    ["recruiter", "interviews", companyId, page] as const,
 };
 
 export type JobPayload = {
@@ -91,15 +96,14 @@ export function useDeleteCompanyLogo() {
 
 // ─── Jobs ───────────────────────────────────────────────────────────────────
 
-export function useMyJobs(companyId?: string) {
+export function useMyJobs(companyId?: string, page = 1, size = PAGE_SIZE) {
   return useQuery({
-    queryKey: recruiterKeys.jobs(companyId),
+    queryKey: recruiterKeys.jobs(companyId, page),
     enabled: !!companyId,
+    placeholderData: keepPreviousData,
     queryFn: () =>
       unwrap<Paginated<Job>>(
-        api.get(`/company/${companyId}/jobs`, {
-          params: { page: 1, size: 100 },
-        }),
+        api.get(`/company/${companyId}/jobs`, { params: { page, size } }),
       ),
   });
 }
@@ -174,16 +178,29 @@ export function useDraftJob() {
   });
 }
 
+export function useDeleteJob() {
+  const invalidate = useJobInvalidation();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/job/${id}`),
+    onSuccess: () => {
+      invalidate();
+      toast.success("Job deleted");
+    },
+    onError: (e) => toast.error(apiMessage(e, "Couldn't delete job")),
+  });
+}
+
 // ─── Applicants ─────────────────────────────────────────────────────────────
 
-export function useJobApplicants(jobId: string) {
+export function useJobApplicants(jobId: string, page = 1) {
   return useQuery({
-    queryKey: recruiterKeys.applicants(jobId),
+    queryKey: recruiterKeys.applicants(jobId, page),
     enabled: !!jobId,
+    placeholderData: keepPreviousData,
     queryFn: () =>
       unwrap<Paginated<JobApplicant>>(
         api.get(`/job/${jobId}/applications`, {
-          params: { page: 1, size: 100 },
+          params: { page, size: PAGE_SIZE },
         }),
       ),
   });
@@ -204,7 +221,7 @@ export function useUpdateApplication(jobId: string) {
       };
     }) => api.patch(`/application/${id}`, payload),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: recruiterKeys.applicants(jobId) });
+      qc.invalidateQueries({ queryKey: ["recruiter", "applicants", jobId] });
       toast.success("Application updated");
     },
     onError: (e) => toast.error(apiMessage(e, "Couldn't update application")),
@@ -213,15 +230,18 @@ export function useUpdateApplication(jobId: string) {
 
 // ─── Interviews ─────────────────────────────────────────────────────────────
 
-export function useCompanyInterviews(companyId?: string) {
+export function useCompanyInterviews(
+  companyId?: string,
+  page = 1,
+  size = PAGE_SIZE,
+) {
   return useQuery({
-    queryKey: recruiterKeys.interviews(companyId),
+    queryKey: recruiterKeys.interviews(companyId, page),
     enabled: !!companyId,
+    placeholderData: keepPreviousData,
     queryFn: () =>
       unwrap<Paginated<Interview>>(
-        api.get(`/interview/${companyId}`, {
-          params: { page: 1, size: 100 },
-        }),
+        api.get(`/interview/${companyId}`, { params: { page, size } }),
       ),
   });
 }
@@ -237,7 +257,7 @@ export function useScheduleInterview(jobId?: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["recruiter", "interviews"] });
       if (jobId)
-        qc.invalidateQueries({ queryKey: recruiterKeys.applicants(jobId) });
+        qc.invalidateQueries({ queryKey: ["recruiter", "applicants", jobId] });
       toast.success("Interview scheduled");
     },
     onError: (e) => toast.error(apiMessage(e, "Couldn't schedule interview")),
@@ -264,5 +284,49 @@ export function useUpdateInterview() {
       toast.success("Interview updated");
     },
     onError: (e) => toast.error(apiMessage(e, "Couldn't update interview")),
+  });
+}
+
+// ─── Reports (company → user) ───────────────────────────────────────────────
+
+export type FiledReport = {
+  _id: string;
+  reason: string;
+  otherReason?: string | null;
+  details?: string | null;
+  status: string;
+  resolutionNote?: string | null;
+  createdAt: string;
+};
+
+// File a report against an applicant. `companyId` (the reporting company) is
+// required and ownership-checked by the API.
+export function useReportUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      userId,
+      payload,
+    }: {
+      userId: string;
+      payload: Record<string, unknown>;
+    }) => api.post(`/report/user/${userId}`, payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["recruiter", "reports"] });
+      toast.success("Report submitted — our team will review it");
+    },
+    onError: (e) => toast.error(apiMessage(e, "Couldn't submit the report")),
+  });
+}
+
+// Reports this company has filed (targetType: user).
+export function useCompanyReports(page = 1) {
+  return useQuery({
+    queryKey: ["recruiter", "reports", page],
+    placeholderData: keepPreviousData,
+    queryFn: () =>
+      unwrap<Paginated<FiledReport>>(
+        api.get("/report/company", { params: { page, size: PAGE_SIZE } }),
+      ),
   });
 }

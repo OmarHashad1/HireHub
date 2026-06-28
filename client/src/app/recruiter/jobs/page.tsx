@@ -11,6 +11,7 @@ import {
   Send,
   Lock,
   EyeOff,
+  Trash2,
   ChevronRight,
 } from "lucide-react";
 import {
@@ -19,6 +20,7 @@ import {
   usePublishJob,
   useCloseJob,
   useDraftJob,
+  useDeleteJob,
 } from "@/features/recruiter/api";
 import { JobFormModal } from "@/features/recruiter/JobFormModal";
 import {
@@ -32,6 +34,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { EmptyState, ErrorState, CardSkeleton } from "@/components/ui/States";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Pagination } from "@/components/ui/Pagination";
 
 const STATUS_STYLES: Record<JobStatus, string> = {
   published: "border-tag-mint/30 bg-tag-mint/10 text-tag-mint",
@@ -61,6 +64,7 @@ function JobRow({
   onPublish,
   onClose,
   onDraft,
+  onDelete,
   busy,
 }: {
   job: Job;
@@ -68,6 +72,7 @@ function JobRow({
   onPublish: () => void;
   onClose: () => void;
   onDraft: () => void;
+  onDelete: () => void;
   busy: boolean;
 }) {
   const place = job.location.isRemote
@@ -144,6 +149,16 @@ function JobRow({
             </Button>
           </>
         )}
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={onDelete}
+          disabled={busy}
+          className="ml-auto text-error hover:text-error"
+        >
+          <Trash2 className="size-3.5" />
+          Delete
+        </Button>
       </div>
     </div>
   );
@@ -151,14 +166,17 @@ function JobRow({
 
 export default function RecruiterJobsPage() {
   const company = useMyCompany();
-  const jobsQuery = useMyJobs(company.data?._id);
+  const [page, setPage] = useState(1);
+  const jobsQuery = useMyJobs(company.data?._id, page);
   const publish = usePublishJob();
   const close = useCloseJob();
   const draft = useDraftJob();
+  const remove = useDeleteJob();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Job | null>(null);
   const [closing, setClosing] = useState<Job | null>(null);
+  const [deleting, setDeleting] = useState<Job | null>(null);
 
   const openCreate = () => {
     setEditing(null);
@@ -170,7 +188,11 @@ export default function RecruiterJobsPage() {
   };
 
   const jobs = jobsQuery.data?.docs ?? [];
-  const busy = publish.isPending || close.isPending || draft.isPending;
+  const busy =
+    publish.isPending ||
+    close.isPending ||
+    draft.isPending ||
+    remove.isPending;
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -209,19 +231,27 @@ export default function RecruiterJobsPage() {
             }
           />
         ) : (
-          <div className="space-y-3">
-            {jobs.map((job) => (
-              <JobRow
-                key={job._id}
-                job={job}
-                busy={busy}
-                onEdit={() => openEdit(job)}
-                onPublish={() => publish.mutate(job._id)}
-                onClose={() => setClosing(job)}
-                onDraft={() => draft.mutate(job._id)}
-              />
-            ))}
-          </div>
+          <>
+            <div className="space-y-3">
+              {jobs.map((job) => (
+                <JobRow
+                  key={job._id}
+                  job={job}
+                  busy={busy}
+                  onEdit={() => openEdit(job)}
+                  onPublish={() => publish.mutate(job._id)}
+                  onClose={() => setClosing(job)}
+                  onDraft={() => draft.mutate(job._id)}
+                  onDelete={() => setDeleting(job)}
+                />
+              ))}
+            </div>
+            <Pagination
+              page={page}
+              pages={jobsQuery.data?.meta.pages ?? 1}
+              onPage={setPage}
+            />
+          </>
         ))}
 
       <JobFormModal
@@ -241,6 +271,20 @@ export default function RecruiterJobsPage() {
         description="It will be removed from the public board and stop accepting applications."
         confirmLabel="Close job"
         loading={close.isPending}
+      />
+
+      <ConfirmDialog
+        open={deleting !== null}
+        onClose={() => setDeleting(null)}
+        onConfirm={() => {
+          if (deleting) remove.mutate(deleting._id);
+          setDeleting(null);
+        }}
+        title="Delete this job?"
+        description="This permanently removes the job and can't be undone."
+        confirmLabel="Delete job"
+        destructive
+        loading={remove.isPending}
       />
     </div>
   );

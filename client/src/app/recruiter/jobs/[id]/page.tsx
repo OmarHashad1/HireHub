@@ -11,6 +11,8 @@ import {
   Sparkles,
   Users,
   ClipboardCheck,
+  UserRound,
+  Flag,
 } from "lucide-react";
 import {
   useMyCompany,
@@ -20,6 +22,8 @@ import {
 import { usePresignedUrl } from "@/lib/presigned";
 import { ScheduleInterviewModal } from "@/features/recruiter/ScheduleInterviewModal";
 import { UpdateApplicationModal } from "@/features/recruiter/UpdateApplicationModal";
+import { CandidateProfileModal } from "@/features/recruiter/CandidateProfileModal";
+import { ReportApplicantModal } from "@/features/recruiter/ReportApplicantModal";
 import {
   type JobApplicant,
   type ApplicationStatus,
@@ -30,6 +34,7 @@ import { cn, relativeTime, initials } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { EmptyState, ErrorState, CardSkeleton } from "@/components/ui/States";
+import { Pagination } from "@/components/ui/Pagination";
 
 const STATUS_STYLES: Record<ApplicationStatus, string> = {
   applied: "border-tag-sky/30 bg-tag-sky/10 text-tag-sky",
@@ -39,6 +44,10 @@ const STATUS_STYLES: Record<ApplicationStatus, string> = {
   rejected: "border-error/30 bg-error/10 text-error",
   withdrawn: "border-hairline bg-surface-3 text-ink-subtle",
 };
+
+// Decided/closed applications have no valid recruiter action left
+// (reject needs "applied", offer needs "interview"), so Review is hidden.
+const DECIDED_STATUSES: ApplicationStatus[] = ["offer", "rejected", "withdrawn"];
 
 function StatusPill({ status }: { status: ApplicationStatus }) {
   return (
@@ -57,10 +66,14 @@ function ApplicantCard({
   application,
   onSchedule,
   onReview,
+  onViewProfile,
+  onReport,
 }: {
   application: JobApplicant;
   onSchedule: () => void;
   onReview: () => void;
+  onViewProfile: () => void;
+  onReport: () => void;
 }) {
   const { data: cvUrl } = usePresignedUrl(application.cv);
   const name = applicantName(application.applicant);
@@ -138,15 +151,30 @@ function ApplicantCard({
             </Button>
           </a>
         )}
+        <Button variant="secondary" size="sm" onClick={onViewProfile}>
+          <UserRound className="size-3.5" />
+          Profile
+        </Button>
         {application.status === "applied" && (
           <Button variant="secondary" size="sm" onClick={onSchedule}>
             <CalendarPlus className="size-3.5" />
             Schedule interview
           </Button>
         )}
-        <Button size="sm" onClick={onReview}>
-          <ClipboardCheck className="size-3.5" />
-          Review
+        {!DECIDED_STATUSES.includes(application.status) && (
+          <Button size="sm" onClick={onReview}>
+            <ClipboardCheck className="size-3.5" />
+            Review
+          </Button>
+        )}
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={onReport}
+          className="ml-auto text-error hover:text-error"
+        >
+          <Flag className="size-3.5" />
+          Report
         </Button>
       </div>
     </div>
@@ -159,10 +187,13 @@ export default function JobApplicantsPage() {
 
   const company = useMyCompany();
   const jobsQuery = useMyJobs(company.data?._id);
-  const applicantsQuery = useJobApplicants(jobId);
+  const [page, setPage] = useState(1);
+  const applicantsQuery = useJobApplicants(jobId, page);
 
   const [scheduleFor, setScheduleFor] = useState<JobApplicant | null>(null);
   const [reviewFor, setReviewFor] = useState<JobApplicant | null>(null);
+  const [profileFor, setProfileFor] = useState<JobApplicant | null>(null);
+  const [reportFor, setReportFor] = useState<JobApplicant | null>(null);
 
   const job = jobsQuery.data?.docs.find((j) => j._id === jobId);
   const applicants = applicantsQuery.data?.docs ?? [];
@@ -198,16 +229,25 @@ export default function JobApplicantsPage() {
             description="Applications will appear here as candidates apply."
           />
         ) : (
-          <div className="space-y-3">
-            {applicants.map((application) => (
-              <ApplicantCard
-                key={application._id}
-                application={application}
-                onSchedule={() => setScheduleFor(application)}
-                onReview={() => setReviewFor(application)}
-              />
-            ))}
-          </div>
+          <>
+            <div className="space-y-3">
+              {applicants.map((application) => (
+                <ApplicantCard
+                  key={application._id}
+                  application={application}
+                  onSchedule={() => setScheduleFor(application)}
+                  onReview={() => setReviewFor(application)}
+                  onViewProfile={() => setProfileFor(application)}
+                  onReport={() => setReportFor(application)}
+                />
+              ))}
+            </div>
+            <Pagination
+              page={page}
+              pages={applicantsQuery.data?.meta.pages ?? 1}
+              onPage={setPage}
+            />
+          </>
         ))}
 
       {scheduleFor && (
@@ -226,6 +266,33 @@ export default function JobApplicantsPage() {
           onClose={() => setReviewFor(null)}
           application={reviewFor}
           jobId={jobId}
+        />
+      )}
+
+      {profileFor && (
+        <CandidateProfileModal
+          key={profileFor._id}
+          applicantId={
+            typeof profileFor.applicant === "object"
+              ? profileFor.applicant._id
+              : profileFor.applicant
+          }
+          fallbackName={applicantName(profileFor.applicant)}
+          onClose={() => setProfileFor(null)}
+        />
+      )}
+
+      {reportFor && company.data && (
+        <ReportApplicantModal
+          key={reportFor._id}
+          userId={
+            typeof reportFor.applicant === "object"
+              ? reportFor.applicant._id
+              : reportFor.applicant
+          }
+          companyId={company.data._id}
+          applicantName={applicantName(reportFor.applicant)}
+          onClose={() => setReportFor(null)}
         />
       )}
     </div>

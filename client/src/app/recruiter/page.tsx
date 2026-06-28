@@ -41,8 +41,10 @@ function StatCard({
 
 export default function RecruiterOverviewPage() {
   const company = useMyCompany();
-  const jobsQuery = useMyJobs(company.data?._id);
-  const interviewsQuery = useCompanyInterviews(company.data?._id);
+  // Larger page so the overview's derived counts aren't capped at the list
+  // page size. (No company-stats endpoint exists yet to aggregate server-side.)
+  const jobsQuery = useMyJobs(company.data?._id, 1, 200);
+  const interviewsQuery = useCompanyInterviews(company.data?._id, 1, 200);
 
   if (company.isLoading) {
     return (

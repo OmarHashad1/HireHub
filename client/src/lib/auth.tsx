@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   useMutation,
   useQuery,
@@ -82,6 +82,44 @@ export function useLogout() {
     },
     onError: (error) => toast.error(apiMessage(error, "Couldn't sign out")),
   });
+}
+
+// A company is confined to its dashboard; these are the only prefixes it may
+// load (/auth is allowed so the Google OAuth callback can finish).
+const COMPANY_ALLOWED_PREFIXES = ["/recruiter", "/auth"];
+
+/**
+ * Global guard: redirects a signed-in company to `/recruiter` from any path
+ * outside its dashboard. Logged-out visitors and other roles pass through, so
+ * it's safe to wrap the whole app.
+ */
+export function CompanyConfinement({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const { data: user, isLoading } = useSession();
+
+  const mustRedirect =
+    !isLoading &&
+    user?.role === "company" &&
+    !COMPANY_ALLOWED_PREFIXES.some((p) => pathname.startsWith(p));
+
+  useEffect(() => {
+    if (mustRedirect) router.replace("/recruiter");
+  }, [mustRedirect, router]);
+
+  if (mustRedirect) {
+    return (
+      <div className="grid min-h-dvh place-items-center text-sm text-ink-subtle">
+        Redirecting…
+      </div>
+    );
+  }
+
+  return <>{children}</>;
 }
 
 export function AuthGate({

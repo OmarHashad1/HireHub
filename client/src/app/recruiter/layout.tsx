@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Briefcase,
   CalendarClock,
+  Flag,
   Building2,
 } from "lucide-react";
 import { AuthGate } from "@/lib/auth";
@@ -16,6 +17,7 @@ const nav: NavItem[] = [
   { href: "/recruiter", label: "Overview", icon: LayoutDashboard, exact: true },
   { href: "/recruiter/jobs", label: "Jobs", icon: Briefcase },
   { href: "/recruiter/interviews", label: "Interviews", icon: CalendarClock },
+  { href: "/recruiter/reports", label: "Reports", icon: Flag },
   { href: "/recruiter/profile", label: "Company", icon: Building2 },
 ];
 

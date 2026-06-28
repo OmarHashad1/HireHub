@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
-import { sessionKey } from "@/lib/auth";
+import { sessionKey, CompanyConfinement } from "@/lib/auth";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [client] = useState(
@@ -27,7 +27,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={client}>
-      {children}
+      <CompanyConfinement>{children}</CompanyConfinement>
       <Toaster
         theme="dark"
         position="bottom-right"

@@ -30,6 +30,7 @@ import { Modal } from "@/components/ui/Modal";
 import { TextArea } from "@/components/ui/Field";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { EmptyState, ErrorState, CardSkeleton } from "@/components/ui/States";
+import { Pagination } from "@/components/ui/Pagination";
 
 const STATUS_STYLES: Record<InterviewStatus, string> = {
   scheduled: "border-primary/40 bg-primary/10 text-primary-hover",
@@ -184,7 +185,8 @@ function CancelInterviewModal({
 
 export default function RecruiterInterviewsPage() {
   const company = useMyCompany();
-  const interviewsQuery = useCompanyInterviews(company.data?._id);
+  const [page, setPage] = useState(1);
+  const interviewsQuery = useCompanyInterviews(company.data?._id, page);
   const update = useUpdateInterview();
 
   const [rescheduleFor, setRescheduleFor] = useState<Interview | null>(null);
@@ -216,18 +218,25 @@ export default function RecruiterInterviewsPage() {
             description="Schedule interviews from a job's applicants list."
           />
         ) : (
-          <div className="space-y-3">
-            {interviews.map((interview) => (
-              <InterviewCard
-                key={interview._id}
-                interview={interview}
-                busy={update.isPending}
-                onReschedule={() => setRescheduleFor(interview)}
-                onCancel={() => setCancelFor(interview)}
-                onComplete={() => setCompleteFor(interview)}
-              />
-            ))}
-          </div>
+          <>
+            <div className="space-y-3">
+              {interviews.map((interview) => (
+                <InterviewCard
+                  key={interview._id}
+                  interview={interview}
+                  busy={update.isPending}
+                  onReschedule={() => setRescheduleFor(interview)}
+                  onCancel={() => setCancelFor(interview)}
+                  onComplete={() => setCompleteFor(interview)}
+                />
+              ))}
+            </div>
+            <Pagination
+              page={page}
+              pages={interviewsQuery.data?.meta.pages ?? 1}
+              onPage={setPage}
+            />
+          </>
         ))}
 
       <RescheduleInterviewModal
